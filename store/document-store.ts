@@ -194,7 +194,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
   updateDocument: async (id, document) => {
     try {
-      set({ isLoading: true, error: null });
+      set({ error: null });
       const user = useAuthStore.getState().user;
       const supabase = createClient();
 
@@ -248,7 +248,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         isLoading: false,
       }));
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      set({ error: error.message });
     }
   },
 

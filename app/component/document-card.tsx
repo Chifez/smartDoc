@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { FileText, FileSpreadsheet, DollarSign, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatLastEdited } from '@/lib/utils/date';
 
 interface DocumentCardProps {
   title: string;
@@ -37,7 +38,7 @@ export function DocumentCard({
       <div className="mb-2 document-icon">{getIcon()}</div>
       <h3 className="font-semibold text-base mb-1">{title}</h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Last edited {lastEdited}
+        Last edited {formatLastEdited(lastEdited)}
       </p>
       <div className="flex gap-2">
         <Button

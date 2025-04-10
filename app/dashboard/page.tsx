@@ -68,9 +68,6 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between border-b p-4">
         <div className="flex items-center gap-2">
           <Logo size="sm" />
-          <span className="text-sm text-muted-foreground ml-2 font-medium">
-            Documents
-          </span>
         </div>
         <div className="flex items-center gap-4">
           <Button
@@ -135,9 +132,7 @@ export default function DashboardPage() {
                         <DocumentCard
                           key={doc.id}
                           title={doc.title}
-                          lastEdited={new Date(
-                            doc.updated_at
-                          ).toLocaleDateString()}
+                          lastEdited={doc.updated_at}
                           type="document"
                           onClick={() =>
                             router.push(`/dashboard/document/${doc.id}`)
@@ -158,9 +153,7 @@ export default function DashboardPage() {
                         <DocumentCard
                           key={doc.id}
                           title={doc.title}
-                          lastEdited={`Shared • ${new Date(
-                            doc.updated_at
-                          ).toLocaleDateString()}`}
+                          lastEdited={`Shared • ${doc.updated_at}`}
                           type="document"
                           onClick={() => router.push(`/document/${doc.id}`)}
                         />
@@ -203,9 +196,7 @@ export default function DashboardPage() {
                           <DocumentCard
                             key={doc.id}
                             title={doc.title}
-                            lastEdited={new Date(
-                              doc.updated_at
-                            ).toLocaleDateString()}
+                            lastEdited={doc.updated_at}
                             type="document"
                             onClick={() => router.push(`/document/${doc.id}`)}
                           />
@@ -239,9 +230,7 @@ export default function DashboardPage() {
                         <DocumentCard
                           key={doc.id}
                           title={doc.title}
-                          lastEdited={`Shared • ${new Date(
-                            doc.updated_at
-                          ).toLocaleDateString()}`}
+                          lastEdited={`Shared • ${doc.updated_at}`}
                           type="document"
                           onClick={() => router.push(`/document/${doc.id}`)}
                         />

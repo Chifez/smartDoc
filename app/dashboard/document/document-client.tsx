@@ -17,14 +17,12 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from '@/app/component/sidebar';
 import { useAuthStore } from '@/store/auth-store';
 import { useDocumentStore } from '@/store/document-store';
-import { useEditor } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function DocumentClient({ id }: { id: string }) {
-  const [content, setContent] = useState('');
-  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
-
   const router = useRouter();
   const { fetchDocument, currentDocument, isLoading, error } =
     useDocumentStore();
@@ -37,7 +35,13 @@ export default function DocumentClient({ id }: { id: string }) {
     content: currentDocument?.content || '',
     editable: true,
     onUpdate: ({ editor }) => {
-      // Handle content updates
+      // Content is automatically updated in the editor
+      // We'll save it when the save button is clicked
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose-sm focus:outline-none max-w-none border-none',
+      },
     },
   });
 
@@ -51,22 +55,34 @@ export default function DocumentClient({ id }: { id: string }) {
     if (currentDocument) {
       setTitle(currentDocument.title);
       if (editor) {
-        editor.commands.setContent(currentDocument.content);
+        try {
+          // Try to parse the content as JSON if it's stored that way
+          const content =
+            typeof currentDocument.content === 'string'
+              ? JSON.parse(currentDocument.content)
+              : currentDocument.content;
+          editor.commands.setContent(content);
+        } catch (e) {
+          // If parsing fails, set the content as is
+          editor.commands.setContent(currentDocument.content);
+        }
       }
     }
   }, [currentDocument, editor]);
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || !editor) return;
 
     setIsSaving(true);
     try {
       await useDocumentStore.getState().updateDocument(id, {
         title,
-        content: editor?.getJSON() as any,
+        content: JSON.stringify(editor.getJSON()),
       });
+      toast.success('Document saved successfully');
     } catch (error) {
       console.error('Error saving document:', error);
+      toast.error('Failed to save document');
     } finally {
       setIsSaving(false);
     }
@@ -89,142 +105,138 @@ export default function DocumentClient({ id }: { id: string }) {
   }
 
   return (
-    <div>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b p-4">
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard/documents">
-              <Button variant="ghost" size="icon" className="mr-2">
-                <ChevronLeft className="h-5 w-5" />
+    <div className="flex flex-col">
+      <header className="bg-white isolate sticky top-0 flex items-center justify-between border-b p-4">
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/documents">
+            <Button variant="ghost" size="icon" className="mr-2">
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-xl font-semibold">Edit Document</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <Button
+              className="bg-[#634AFF] hover:bg-[#5338FF] text-white rounded-md h-9 px-4 text-sm font-medium"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Save Document'
+              )}
+            </Button>
+          </div>
+
+          <Sheet>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
               </Button>
-            </Link>
-            <h1 className="text-xl font-semibold">Edit Document</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-4">
-              <Button
-                className="bg-[#634AFF] hover:bg-[#5338FF] text-white rounded-md h-9 px-4 text-sm font-medium"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Save Document'
-                )}
-              </Button>
-            </div>
-
-            <Sheet>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-64 p-0">
-                <div className="p-4 border-b">
-                  <h2 className="text-lg font-medium">Document Options</h2>
-                </div>
-
-                <div className="p-4 space-y-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                  >
-                    <Share className="h-4 w-4" />
-                    Share
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                  >
-                    <History className="h-4 w-4" />
-                    View History
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-auto">
-          <div className="md:hidden border-b">
-            <Tabs defaultValue="edit" className="w-full">
-              <TabsList className="w-full grid grid-cols-4 bg-white h-12 p-0">
-                <TabsTrigger
-                  value="edit"
-                  className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
-                >
-                  Edit
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ai"
-                  className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
-                >
-                  AI Tools
-                </TabsTrigger>
-                <TabsTrigger
-                  value="comments"
-                  className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
-                >
-                  Comments
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
-                >
-                  History
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          <div className="p-4 md:p-8 max-w-4xl mx-auto">
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="Document title"
-                className="w-full text-xl font-medium border-none focus:outline-none focus:ring-0 bg-transparent"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-
-            <div className="min-h-[300px]">
-              <textarea
-                placeholder="Start writing or paste your text"
-                className="w-full min-h-[300px] resize-none border-none focus:outline-none focus:ring-0 bg-transparent text-base"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-              />
-            </div>
-
-            <div className="mt-8 ai-assistant-bg rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Wand2 className="h-5 w-5 text-purple-500" />
-                <h3 className="font-medium">AI Assistant</h3>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-64 p-0">
+              <div className="p-4 border-b">
+                <h2 className="text-lg font-medium">Document Options</h2>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Get real-time suggestions to improve your content
-              </p>
-              <div className="flex gap-2">
+
+              <div className="p-4 space-y-4">
                 <Button
-                  size="sm"
-                  variant="secondary"
-                  className="text-xs h-8 px-3 rounded-md"
-                >
-                  Get suggestions
-                </Button>
-                <Button
-                  size="sm"
                   variant="outline"
-                  className="text-xs h-8 px-3 rounded-md bg-white"
+                  size="sm"
+                  className="w-full justify-start gap-2"
                 >
-                  Settings
+                  <Share className="h-4 w-4" />
+                  Share
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  View History
                 </Button>
               </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-auto">
+        <div className="md:hidden border-b">
+          <Tabs defaultValue="edit" className="w-full">
+            <TabsList className="w-full grid grid-cols-4 bg-white h-12 p-0">
+              <TabsTrigger
+                value="edit"
+                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
+              >
+                Edit
+              </TabsTrigger>
+              <TabsTrigger
+                value="ai"
+                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
+              >
+                AI Tools
+              </TabsTrigger>
+              <TabsTrigger
+                value="comments"
+                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
+              >
+                Comments
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent rounded-none h-full"
+              >
+                History
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        <div className="p-4 md:p-8 max-w-4xl mx-auto">
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Document title"
+              className="w-full text-xl font-medium border-none focus:outline-none focus:ring-0 bg-transparent"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+
+          <div className="min-h-[300px] prose prose-sm max-w-none">
+            <EditorContent
+              editor={editor}
+              className="min-h-[300px] focus:outline-none "
+            />
+          </div>
+
+          <div className="mt-8 ai-assistant-bg rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Wand2 className="h-5 w-5 text-purple-500" />
+              <h3 className="font-medium">AI Assistant</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Get real-time suggestions to improve your content
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="text-xs h-8 px-3 rounded-md"
+              >
+                Get suggestions
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-8 px-3 rounded-md bg-white"
+              >
+                Settings
+              </Button>
             </div>
           </div>
         </div>

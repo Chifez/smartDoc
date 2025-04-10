@@ -142,7 +142,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Desktop Sidebar */}
       <div
         className={cn(
-          'hidden md:flex h-screen w-64 flex-col border-r bg-[#1E1E1E] text-white',
+          'hidden md:flex h-screen w-64 flex-col border-r',
           className
         )}
       >

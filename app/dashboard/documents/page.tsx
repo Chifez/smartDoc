@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function DocumentsPage() {
   const router = useRouter();
-  const { createDocument } = useDocumentStore();
+  const { createDocument, documents = [] } = useDocumentStore();
   const [isCreating, setIsCreating] = useState(false);
 
   const handleNewDocument = async () => {
@@ -31,52 +31,6 @@ export default function DocumentsPage() {
       setIsCreating(false);
     }
   };
-
-  const myDocuments = [
-    {
-      id: 1,
-      title: 'Project Proposal',
-      lastEdited: '2 hours ago',
-      type: 'document',
-    },
-    {
-      id: 2,
-      title: 'Meeting Notes',
-      lastEdited: 'yesterday',
-      type: 'document',
-    },
-    {
-      id: 3,
-      title: 'Product Roadmap',
-      lastEdited: '3 days ago',
-      type: 'spreadsheet',
-    },
-    { id: 4, title: 'Q3 Report', lastEdited: '1 week ago', type: 'report' },
-    {
-      id: 5,
-      title: 'Design System',
-      lastEdited: '1 week ago',
-      type: 'document',
-    },
-    {
-      id: 6,
-      title: 'User Research',
-      lastEdited: '2 weeks ago',
-      type: 'document',
-    },
-    {
-      id: 7,
-      title: 'Sales Metrics',
-      lastEdited: '2 weeks ago',
-      type: 'spreadsheet',
-    },
-    {
-      id: 8,
-      title: 'Annual Review',
-      lastEdited: '1 month ago',
-      type: 'report',
-    },
-  ];
 
   return (
     <div className="flex flex-col">
@@ -104,12 +58,12 @@ export default function DocumentsPage() {
 
       <div className="w-full p-4 md:p-6 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {myDocuments.map((doc) => (
+          {documents.map((doc) => (
             <DocumentCard
               key={doc.id}
               title={doc.title}
-              lastEdited={doc.lastEdited}
-              type={doc.type as any}
+              lastEdited={doc.updated_at}
+              type="document"
               onClick={() => router.push(`/dashboard/document/${doc.id}`)}
             />
           ))}
