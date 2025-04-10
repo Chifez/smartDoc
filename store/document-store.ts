@@ -47,40 +47,16 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      // Fetch documents created by the user
-      const { data: ownedDocuments, error: ownedError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (ownedError) {
-        throw ownedError;
-      }
-
-      // Fetch documents shared with the user
-      const { data: sharedDocuments, error: sharedError } = await supabase
-        .from('document_permissions')
-        .select('document_id, permission_level, documents(*)')
-        .eq('user_id', user.id);
-
-      if (sharedError) {
-        throw sharedError;
-      }
-
-      // Combine and deduplicate documents
-      const sharedDocs = (sharedDocuments || []).map((item) => ({
-        ...item.documents,
-        permission_level: item.permission_level,
-      }));
-
-      const allDocuments = [...(ownedDocuments || []), ...sharedDocs];
-
-      // Remove duplicates
-      const uniqueDocuments = Array.from(
-        new Map(allDocuments.map((doc) => [doc.id, doc])).values()
+      // Use the security definer function to fetch documents
+      const { data: documents, error } = await supabase.rpc(
+        'get_user_documents'
       );
 
-      set({ documents: uniqueDocuments, isLoading: false });
+      if (error) {
+        throw error;
+      }
+
+      set({ documents: documents || [], isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -96,29 +72,19 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      // Fetch document
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // Use the security definer function to fetch document with permission check
+      const { data, error } = (await supabase
+        .rpc('get_document_with_permission', { p_document_id: id })
+        .single()) as { data: Document | null; error: any };
 
       if (error) {
         throw error;
       }
 
-      // Check if user has permission to access this document
-      if (data.user_id !== user.id) {
-        const { data: permission, error: permissionError } = await supabase
-          .from('document_permissions')
-          .select('*')
-          .eq('document_id', id)
-          .eq('user_id', user.id)
-          .single();
-
-        if (permissionError || !permission) {
-          throw new Error('You do not have permission to access this document');
-        }
+      if (!data) {
+        throw new Error(
+          'Document not found or you do not have permission to access it'
+        );
       }
 
       set({ currentDocument: data, isLoading: false });
@@ -139,52 +105,38 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      // Create an empty TipTap document structure
-      const emptyDocument = JSON.stringify({
-        type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-            content: [],
-          },
-        ],
+      // Use the security definer function to create document
+      const { data, error } = await supabase.rpc('create_user_document', {
+        p_title: document.title,
+        p_is_public: document.is_public,
+        p_user_id: user.id,
       });
 
-      // Simplify the document creation to avoid permission checks
-      const newDocument = {
-        title: document.title,
-        content: document.content || emptyDocument,
-        user_id: user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_public: false,
-      };
-
-      console.log('Attempting to insert document:', newDocument);
-
-      // Insert directly into documents table without checking permissions
-      const { data, error } = await supabase
-        .from('documents')
-        .insert(newDocument)
-        .select(
-          'id, title, content, user_id, created_at, updated_at, is_public'
-        )
-        .single();
-
       if (error) {
-        console.error('Error inserting document:', error);
+        console.error('Error creating document:', error);
         throw error;
       }
 
-      console.log('Document created successfully:', data);
+      console.log('Document created successfully with ID:', data);
+
+      // Fetch the newly created document to update the store
+      const { data: newDocument, error: fetchError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('id', data)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
 
       set((state) => ({
-        documents: [...state.documents, data],
-        currentDocument: data,
+        documents: [...state.documents, newDocument],
+        currentDocument: newDocument,
         isLoading: false,
       }));
 
-      return data.id;
+      return data;
     } catch (error: any) {
       console.error('Error in createDocument:', error);
       set({ error: error.message, isLoading: false });
@@ -202,41 +154,14 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      const { currentDocument } = get();
-
-      if (!currentDocument) {
-        throw new Error('No document selected');
-      }
-
-      // Check if user has permission to update this document
-      if (currentDocument.user_id !== user.id) {
-        const { data: permission, error: permissionError } = await supabase
-          .from('document_permissions')
-          .select('*')
-          .eq('document_id', id)
-          .eq('user_id', user.id)
-          .single();
-
-        if (
-          permissionError ||
-          !permission ||
-          permission.permission_level === 'read'
-        ) {
-          throw new Error('You do not have permission to update this document');
-        }
-      }
-
-      const updatedDocument: DocumentUpdate = {
-        ...document,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from('documents')
-        .update(updatedDocument)
-        .eq('id', id)
-        .select()
-        .single();
+      // Use the security definer function to update document
+      const { data, error } = await supabase.rpc('update_user_document', {
+        p_document_id: id,
+        p_title: document.title,
+        p_content: document.content,
+        p_is_public: document.is_public,
+        p_user_id: user.id,
+      });
 
       if (error) {
         throw error;
@@ -397,27 +322,10 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      // Check if user has permission to view permissions
-      const { data: document, error: docError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', documentId)
-        .single();
-
-      if (docError) {
-        throw docError;
-      }
-
-      if (document.user_id !== user.id) {
-        throw new Error(
-          'You do not have permission to view document permissions'
-        );
-      }
-
-      const { data, error } = await supabase
-        .from('document_permissions')
-        .select('*')
-        .eq('document_id', documentId);
+      // Use the security definer function to get permissions
+      const { data, error } = await supabase.rpc('get_document_permissions', {
+        document_id: documentId,
+      });
 
       if (error) {
         throw error;

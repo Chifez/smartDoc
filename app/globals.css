@@ -120,4 +120,12 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .is-editor-empty[data-placeholder]::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: #adb5bd; /* Placeholder text color - adjust as needed */
+    pointer-events: none;
+    height: 0;
+  }
 }

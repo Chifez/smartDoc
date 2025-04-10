@@ -19,15 +19,26 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useState } from 'react';
 import { Logo } from './logo';
 import { useAuthStore } from '@/store/auth-store';
-
+import { useDocumentStore } from '@/store/document-store';
+import { useRouter } from 'next/navigation';
 interface SidebarProps {
   className?: string;
 }
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { signOut } = useAuthStore();
+  const { createDocument } = useDocumentStore();
   const [open, setOpen] = useState(false);
+
+  const handleNewDocument = async () => {
+    const newDocId = await createDocument({
+      title: 'Untitled Document',
+      content: '',
+    });
+    router.push(`/dashboard/document/${newDocId}`);
+  };
 
   const routes = [
     {
@@ -88,9 +99,10 @@ export function Sidebar({ className }: SidebarProps) {
         </div>
       </div>
       <div className="px-3 py-2 mt-auto">
-        <Link href="/document/new" className="space-y-1">
+        <Link href="/dashboard/documents" className="space-y-1">
           <Button
             variant="ghost"
+            onClick={handleNewDocument}
             className="hover:bg-muted text-black w-full justify-start gap-2 text-xs font-medium"
           >
             <Plus className="h-4 w-4" />

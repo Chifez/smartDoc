@@ -22,9 +22,9 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-import { supabase } from '@/lib/supabase';
 import { Copy, Check, X } from 'lucide-react';
 import { useDocumentStore } from '@/store/document-store';
+import { createClient } from '@/lib/utils/supabase/client';
 
 interface ShareDocumentDialogProps {
   isOpen: boolean;
@@ -46,16 +46,24 @@ export function ShareDocumentDialog({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [link, setLink] = useState('');
 
   const { getDocumentPermissions, shareDocument, removeDocumentAccess } =
     useDocumentStore();
 
+  const supabase = createClient();
   // Load existing permissions
   useEffect(() => {
     if (isOpen && documentId) {
       loadPermissions();
     }
   }, [isOpen, documentId]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setLink(`${window.location.origin}/document/${documentId}`);
+    }
+  }, [documentId]);
 
   const loadPermissions = async () => {
     setIsLoading(true);
@@ -152,7 +160,7 @@ export function ShareDocumentDialog({
 
   // Handle copy link
   const handleCopyLink = () => {
-    const link = `${window.location.origin}/document/${documentId}`;
+    // const link = `${window && window.location.origin}/document/${documentId}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -180,12 +188,7 @@ export function ShareDocumentDialog({
               <Label htmlFor="link" className="sr-only">
                 Link
               </Label>
-              <Input
-                id="link"
-                defaultValue={`${window.location.origin}/document/${documentId}`}
-                readOnly
-                className="h-9"
-              />
+              <Input id="link" defaultValue={link} readOnly className="h-9" />
             </div>
             <Button
               type="button"

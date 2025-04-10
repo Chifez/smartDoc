@@ -10,6 +10,7 @@ import {
   Wand2,
   Menu,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -17,33 +18,37 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from '@/app/component/sidebar';
 import { useAuthStore } from '@/store/auth-store';
 import { useDocumentStore } from '@/store/document-store';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { CollaborativeEditor } from '@/app/component/collboarative-editor';
+import { ShareDocumentDialog } from '@/app/component/share-document-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function DocumentClient({ id }: { id: string }) {
   const router = useRouter();
-  const { fetchDocument, currentDocument, isLoading, error } =
-    useDocumentStore();
+  const {
+    fetchDocument,
+    currentDocument,
+    isLoading,
+    error,
+    updateDocument,
+    deleteDocument,
+  } = useDocumentStore();
   const { user } = useAuthStore();
   const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: currentDocument?.content || '',
-    editable: true,
-    onUpdate: ({ editor }) => {
-      // Content is automatically updated in the editor
-      // We'll save it when the save button is clicked
-    },
-    editorProps: {
-      attributes: {
-        class: 'prose-sm focus:outline-none max-w-none border-none',
-      },
-    },
-  });
+  const [content, setContent] = useState('');
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -54,30 +59,18 @@ export default function DocumentClient({ id }: { id: string }) {
   useEffect(() => {
     if (currentDocument) {
       setTitle(currentDocument.title);
-      if (editor) {
-        try {
-          // Try to parse the content as JSON if it's stored that way
-          const content =
-            typeof currentDocument.content === 'string'
-              ? JSON.parse(currentDocument.content)
-              : currentDocument.content;
-          editor.commands.setContent(content);
-        } catch (e) {
-          // If parsing fails, set the content as is
-          editor.commands.setContent(currentDocument.content);
-        }
-      }
+      setContent(JSON.parse(currentDocument.content) || '');
     }
-  }, [currentDocument, editor]);
+  }, [currentDocument]);
 
   const handleSave = async () => {
-    if (!user || !editor) return;
+    if (!user || !currentDocument) return;
 
     setIsSaving(true);
     try {
-      await useDocumentStore.getState().updateDocument(id, {
+      await updateDocument(id, {
         title,
-        content: JSON.stringify(editor.getJSON()),
+        content,
       });
       toast.success('Document saved successfully');
     } catch (error) {
@@ -85,6 +78,21 @@ export default function DocumentClient({ id }: { id: string }) {
       toast.error('Failed to save document');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteDocument(id);
+      toast.success('Document deleted successfully');
+      router.push('/dashboard/documents');
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast.error('Failed to delete document');
     }
   };
 
@@ -104,6 +112,8 @@ export default function DocumentClient({ id }: { id: string }) {
     );
   }
 
+  const isOwner = currentDocument?.user_id === user?.id;
+
   return (
     <div className="flex flex-col">
       <header className="bg-white isolate sticky top-0 flex items-center justify-between border-b p-4">
@@ -117,6 +127,26 @@ export default function DocumentClient({ id }: { id: string }) {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setIsShareDialogOpen(true)}
+            >
+              <Share className="h-4 w-4" />
+              Share
+            </Button>
+            {isOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            )}
             <Button
               className="bg-[#634AFF] hover:bg-[#5338FF] text-white rounded-md h-9 px-4 text-sm font-medium"
               onClick={handleSave}
@@ -146,10 +176,22 @@ export default function DocumentClient({ id }: { id: string }) {
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
+                  onClick={() => setIsShareDialogOpen(true)}
                 >
                   <Share className="h-4 w-4" />
                   Share
                 </Button>
+                {isOwner && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -207,10 +249,12 @@ export default function DocumentClient({ id }: { id: string }) {
             />
           </div>
 
-          <div className="min-h-[300px] prose prose-sm max-w-none">
-            <EditorContent
-              editor={editor}
-              className="min-h-[300px] focus:outline-none "
+          <div className="min-h-[300px] prose prose-sm max-w-none placeholder:text-muted-foreground">
+            <CollaborativeEditor
+              placeholder="Start writing or paste your text..."
+              initialContent={content}
+              documentId={id}
+              onChange={handleContentChange}
             />
           </div>
 
@@ -241,6 +285,36 @@ export default function DocumentClient({ id }: { id: string }) {
           </div>
         </div>
       </div>
+
+      <ShareDocumentDialog
+        isOpen={isShareDialogOpen}
+        onClose={() => setIsShareDialogOpen(false)}
+        documentId={id}
+      />
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              document and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

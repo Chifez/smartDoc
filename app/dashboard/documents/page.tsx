@@ -18,7 +18,6 @@ export default function DocumentsPage() {
     try {
       const newDoc = {
         title: 'Untitled Document',
-        content: '',
         is_public: false,
       };
       const docId = await createDocument(newDoc);

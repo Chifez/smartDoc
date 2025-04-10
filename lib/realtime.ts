@@ -36,6 +36,18 @@ export function createDocumentChannel(
   return channel;
 }
 
+// Broadcast document updates to all connected clients
+export async function broadcastDocumentUpdate(
+  channel: RealtimeChannel,
+  content: string
+): Promise<void> {
+  await channel.send({
+    type: 'broadcast',
+    event: 'document:update',
+    payload: { content },
+  });
+}
+
 // Type for cursor position
 export interface CursorPosition {
   x: number;

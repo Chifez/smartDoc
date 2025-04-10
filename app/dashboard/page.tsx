@@ -43,7 +43,6 @@ export default function DashboardPage() {
 
       const newDocId = await createDocument({
         title: 'Untitled Document',
-        content: '',
         is_public: false,
       });
 
@@ -86,25 +85,25 @@ export default function DashboardPage() {
             <TabsList className="bg-transparent h-10">
               <TabsTrigger
                 value="all"
-                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
+                className="rounded-none w-fit data-[state=active]:border-b-2 data-[state=active]:border-b-[#634AFF] data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
               >
                 All
               </TabsTrigger>
               <TabsTrigger
                 value="recent"
-                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
+                className="rounded-none w-fit data-[state=active]:border-b-2 data-[state=active]:border-b-[#634AFF] data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
               >
                 Recent
               </TabsTrigger>
               <TabsTrigger
                 value="shared"
-                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
+                className="rounded-none w-fit data-[state=active]:border-b-2 data-[state=active]:border-b-[#634AFF] data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
               >
                 Shared
               </TabsTrigger>
               <TabsTrigger
                 value="favorites"
-                className="data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
+                className="rounded-none w-fit data-[state=active]:border-b-2 data-[state=active]:border-b-[#634AFF] data-[state=active]:tab-active data-[state=active]:shadow-none data-[state=active]:bg-transparent px-4 h-10 text-sm font-medium"
               >
                 Favorites
               </TabsTrigger>
