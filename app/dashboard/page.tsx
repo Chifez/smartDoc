@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const { fetchDocuments, documents, createDocument } = useDocumentStore();
 
   // Use React Query to fetch documents
-  const { data, isLoading, error } = useQuery({
+  const { data, isPending, error } = useQuery({
     queryKey: ['documents'],
     queryFn: async () => {
       await fetchDocuments();
@@ -110,7 +110,7 @@ export default function DashboardPage() {
             </TabsList>
           </div>
 
-          {isLoading ? (
+          {isPending ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#634AFF]"></div>
             </div>
@@ -136,6 +136,7 @@ export default function DashboardPage() {
                           onClick={() =>
                             router.push(`/dashboard/document/${doc.id}`)
                           }
+                          documentId={doc.id}
                         />
                       ))}
                     </div>
@@ -154,7 +155,10 @@ export default function DashboardPage() {
                           title={doc.title}
                           lastEdited={`Shared • ${doc.updated_at}`}
                           type="document"
-                          onClick={() => router.push(`/document/${doc.id}`)}
+                          onClick={() =>
+                            router.push(`/dashboard/document/${doc.id}`)
+                          }
+                          documentId={doc.id}
                         />
                       ))}
                     </div>
@@ -198,6 +202,7 @@ export default function DashboardPage() {
                             lastEdited={doc.updated_at}
                             type="document"
                             onClick={() => router.push(`/document/${doc.id}`)}
+                            documentId={doc.id}
                           />
                         ))}
                     </div>
@@ -232,6 +237,7 @@ export default function DashboardPage() {
                           lastEdited={`Shared • ${doc.updated_at}`}
                           type="document"
                           onClick={() => router.push(`/document/${doc.id}`)}
+                          documentId={doc.id}
                         />
                       ))}
                     </div>

@@ -64,6 +64,7 @@ export default function DocumentsPage() {
               lastEdited={doc.updated_at}
               type="document"
               onClick={() => router.push(`/dashboard/document/${doc.id}`)}
+              documentId={doc.id}
             />
           ))}
         </div>

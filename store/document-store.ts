@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useAuthStore } from './auth-store';
 import { Database } from '@/lib/types';
 import { createClient } from '@/lib/utils/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
@@ -13,9 +14,10 @@ interface DocumentState {
   documents: Document[];
   currentDocument: Document | null;
   isLoading: boolean;
+  isPermissionsLoading: boolean;
   error: string | null;
   fetchDocuments: () => Promise<void>;
-  fetchDocument: (id: string) => Promise<void>;
+  fetchDocument: (id: string) => Promise<{ data: Document }>;
   createDocument: (
     document: Omit<DocumentInsert, 'user_id'>
   ) => Promise<string | null>;
@@ -29,12 +31,16 @@ interface DocumentState {
   ) => Promise<void>;
   removeDocumentAccess: (documentId: string, userId: string) => Promise<void>;
   getDocumentPermissions: (documentId: string) => Promise<DocumentPermission[]>;
+  searchUsers: (
+    query: string
+  ) => Promise<{ data: Partial<User[]>; error: string | null }>;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
   documents: [],
   currentDocument: null,
   isLoading: false,
+  isPermissionsLoading: false,
   error: null,
 
   fetchDocuments: async () => {
@@ -64,7 +70,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
   fetchDocument: async (id) => {
     try {
-      set({ isLoading: true, error: null });
+      // Reset current document state before fetching new one
+      set({ currentDocument: null, isLoading: true, error: null });
+
       const user = useAuthStore.getState().user;
       const supabase = createClient();
 
@@ -88,8 +96,10 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       }
 
       set({ currentDocument: data, isLoading: false });
+      return { data };
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      set({ error: error.message, isLoading: false, currentDocument: null });
+      throw error;
     }
   },
 
@@ -120,11 +130,15 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       console.log('Document created successfully with ID:', data);
 
       // Fetch the newly created document to update the store
-      const { data: newDocument, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', data)
-        .single();
+      // const { data: newDocument, error: fetchError } = await supabase
+      //   .from('documents')
+      //   .select('*')
+      //   .eq('id', data)
+      //   .single();
+
+      const { data: newDocument, error: fetchError } = (await supabase
+        .rpc('get_document_with_permission', { p_document_id: data })
+        .single()) as { data: Document; error: any };
 
       if (fetchError) {
         throw fetchError;
@@ -239,26 +253,11 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      // Check if user has permission to share this document
-      const { data: document, error: docError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', documentId)
-        .single();
-
-      if (docError) {
-        throw docError;
-      }
-
-      if (document.user_id !== user.id) {
-        throw new Error('You do not have permission to share this document');
-      }
-
-      const { error } = await supabase.from('document_permissions').insert({
-        document_id: documentId,
-        user_id: userId,
-        permission_level: permissionLevel,
-        created_at: new Date().toISOString(),
+      // Use the security definer function to share document
+      const { error } = await supabase.rpc('share_document', {
+        p_document_id: documentId,
+        p_user_id: userId,
+        p_permission_level: permissionLevel,
       });
 
       if (error) {
@@ -281,26 +280,12 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      // Check if user has permission to remove access
-      const { data: document, error: docError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', documentId)
-        .single();
-
-      if (docError) {
-        throw docError;
-      }
-
-      if (document.user_id !== user.id) {
-        throw new Error('You do not have permission to remove access');
-      }
-
-      const { error } = await supabase
-        .from('document_permissions')
-        .delete()
-        .eq('document_id', documentId)
-        .eq('user_id', userId);
+      // Use the security definer function to remove document access
+      const { data, error } = await supabase.rpc('remove_document_permission', {
+        p_document_id: documentId,
+        p_user_id: userId,
+        p_requester_id: user.id,
+      });
 
       if (error) {
         throw error;
@@ -314,28 +299,46 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
   getDocumentPermissions: async (documentId) => {
     try {
-      set({ isLoading: true, error: null });
-      const user = useAuthStore.getState().user;
+      set({ isPermissionsLoading: true });
       const supabase = createClient();
 
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Use the security definer function to get permissions
       const { data, error } = await supabase.rpc('get_document_permissions', {
-        document_id: documentId,
+        p_document_id: documentId,
       });
 
       if (error) {
         throw error;
       }
 
-      set({ isLoading: false });
-      return data || [];
+      set({ isPermissionsLoading: false });
+      return data;
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
-      return [];
+      set({ error: error.message, isPermissionsLoading: false });
+      return null;
+    }
+  },
+
+  searchUsers: async (query: string) => {
+    if (!query) return { data: [], error: null };
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase.rpc('search_user_by_email', {
+        p_email: query,
+      });
+
+      if (error) throw error;
+
+      return {
+        data: data || [],
+        error: null,
+      };
+    } catch (error) {
+      console.error('Error searching users:', error);
+      return {
+        data: [],
+        error:
+          error instanceof Error ? error.message : 'Failed to search users',
+      };
     }
   },
 }));

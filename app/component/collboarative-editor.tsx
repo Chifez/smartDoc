@@ -1,11 +1,9 @@
 'use client';
 
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useAuthStore } from '@/store/auth-store';
@@ -34,14 +32,15 @@ import {
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 import { debounce } from 'lodash';
+
 interface CollaborativeEditorProps {
   documentId: string;
-  initialContent: string;
+  initialContent: string | any;
   onChange: (content: string) => void;
   placeholder?: string;
 }
 
-export function CollaborativeEditor({
+export default function CollaborativeEditor({
   documentId,
   initialContent,
   onChange,
@@ -52,28 +51,65 @@ export function CollaborativeEditor({
   const [activeUsers, setActiveUsers] = useState<Record<string, UserPresence>>(
     {}
   );
-  // Create a debounced version of onChange
-  const debouncedOnChange = debounce((content: string) => {
-    onChange(content);
-  }, 300);
+  const [isMounted, setIsMounted] = useState(false);
+  const isLocalUpdate = useRef(false);
+
+  // Parse initial content if needed
+  const getParsedContent = useCallback(() => {
+    if (!initialContent) return { type: 'doc', content: [] };
+
+    try {
+      if (typeof initialContent === 'string') {
+        return JSON.parse(initialContent);
+      }
+      return initialContent;
+    } catch (error) {
+      console.error('Error parsing content:', error);
+      return { type: 'doc', content: [] };
+    }
+  }, [initialContent]);
+
+  // Create a debounced version of onChange that doesn't trigger for local updates
+  const debouncedOnChange = useCallback(
+    debounce((content: string) => {
+      isLocalUpdate.current = true;
+      onChange(content);
+      // Reset the flag after a short delay to prevent issues with other async operations
+      setTimeout(() => {
+        isLocalUpdate.current = false;
+      }, 50);
+    }, 300),
+    [onChange]
+  );
 
   // Initialize the editor
   const editor = useEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({
-        placeholder,
+        placeholder: placeholder,
         showOnlyWhenEditable: true,
         showOnlyCurrent: true,
+        emptyEditorClass: 'is-editor-empty',
       }),
     ],
-    immediatelyRender: false,
-    content: typeof window !== 'undefined' ? initialContent || '' : '',
+    content: getParsedContent(),
     onUpdate: ({ editor }) => {
       const json = JSON.stringify(editor.getJSON());
       debouncedOnChange(json);
+
+      // Broadcast changes to other users
+      if (channel && user) {
+        channel.send({
+          type: 'broadcast',
+          event: 'document:update',
+          payload: {
+            content: json,
+            user_id: user.id,
+          },
+        });
+      }
     },
-    autofocus: 'end',
     editorProps: {
       attributes: {
         class:
@@ -82,9 +118,43 @@ export function CollaborativeEditor({
     },
   });
 
+  // Set mounted state
+  useEffect(() => {
+    setIsMounted(true);
+    return () => {
+      debouncedOnChange.cancel();
+    };
+  }, [debouncedOnChange]);
+
+  // Handle initial content and updates
+  useEffect(() => {
+    if (editor && !isLocalUpdate.current) {
+      const content = getParsedContent();
+
+      // Only update if content actually changed (string comparison to avoid unnecessary rerenders)
+      const currentContent = JSON.stringify(editor.getJSON());
+      const newContent = JSON.stringify(content);
+
+      if (currentContent !== newContent) {
+        const { from, to } = editor.state.selection;
+
+        // Update content and restore selection
+        editor.commands.setContent(content, false);
+
+        // Try to restore cursor position if possible
+        try {
+          editor.commands.setTextSelection({ from, to });
+        } catch (e) {
+          // If restoring selection fails, place cursor at end
+          editor.commands.setTextSelection(editor.state.doc.content.size);
+        }
+      }
+    }
+  }, [editor, getParsedContent]);
+
   // Set up the realtime channel and handle updates
   useEffect(() => {
-    if (!user || !documentId) return;
+    if (!user || !documentId || !editor || !isMounted) return;
 
     const newChannel = createDocumentChannel(documentId, user);
     if (newChannel) {
@@ -97,13 +167,33 @@ export function CollaborativeEditor({
 
       // Handle document updates from other users
       const handleUpdate = (payload: any) => {
-        if (payload.event === 'document:update' && editor) {
-          try {
-            const content = JSON.parse(payload.payload.content);
-            editor.commands.setContent(content);
-          } catch (error) {
-            console.error('Error parsing document update:', error);
+        // Skip updates from the current user
+        if (payload.payload?.user_id === user?.id) return;
+
+        try {
+          if (!editor || isLocalUpdate.current) return;
+
+          const update = JSON.parse(payload.payload.content);
+
+          // Save current selection
+          const { from, to } = editor.state.selection;
+
+          // Only update if content is different
+          const currentContent = JSON.stringify(editor.getJSON());
+          const newContent = JSON.stringify(update);
+
+          if (currentContent !== newContent) {
+            // Update content and restore selection
+            editor.commands.setContent(update, false);
+
+            try {
+              editor.commands.setTextSelection({ from, to });
+            } catch (e) {
+              // If restoring selection fails, just let it be
+            }
           }
+        } catch (error) {
+          console.error('Error handling remote update:', error);
         }
       };
 
@@ -114,7 +204,7 @@ export function CollaborativeEditor({
         newChannel.unsubscribe();
       };
     }
-  }, [documentId, user, editor]);
+  }, [documentId, user, editor, isMounted]);
 
   // Update cursor position on mouse move
   const handleMouseMove = debounce((e: React.MouseEvent) => {
@@ -218,7 +308,11 @@ export function CollaborativeEditor({
               .filter((u) => u.id !== user?.id)
               .map((activeUser) => (
                 <Tooltip key={activeUser.id}>
-                  <TooltipTrigger asChild key={activeUser.id}>
+                  <TooltipTrigger
+                    asChild
+                    key={activeUser.id}
+                    className="cursor-pointer"
+                  >
                     <Avatar
                       className={cn('h-6 w-6 border-2', {
                         'border-green-500':

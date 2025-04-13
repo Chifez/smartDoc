@@ -48,22 +48,15 @@ export function ShareDocumentDialog({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [link, setLink] = useState('');
 
-  const { getDocumentPermissions, shareDocument, removeDocumentAccess } =
-    useDocumentStore();
+  const {
+    getDocumentPermissions,
+    shareDocument,
+    removeDocumentAccess,
+    isPermissionsLoading,
+    searchUsers,
+  } = useDocumentStore();
 
   const supabase = createClient();
-  // Load existing permissions
-  useEffect(() => {
-    if (isOpen && documentId) {
-      loadPermissions();
-    }
-  }, [isOpen, documentId]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setLink(`${window.location.origin}/document/${documentId}`);
-    }
-  }, [documentId]);
 
   const loadPermissions = async () => {
     setIsLoading(true);
@@ -78,19 +71,22 @@ export function ShareDocumentDialog({
   };
 
   // Search for users by email
-  const searchUsers = async (query: string) => {
+  const usersResult = async (query: string) => {
     if (!query || query.length < 3) {
       setSearchResults([]);
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, avatar_url')
-        .ilike('email', `%${query}%`)
-        .limit(5);
+    console.log('query', query, email);
 
+    try {
+      // const { data, error } = await supabase
+      //   .from('profiles')
+      //   .select('id, email, full_name, avatar_url')
+      //   .ilike('email', `%${query}%`)
+      //   .limit(5);
+      const { data, error } = await searchUsers(query);
+      console.log('search result', data);
       if (error) throw error;
       setSearchResults(data || []);
     } catch (err) {
@@ -103,7 +99,7 @@ export function ShareDocumentDialog({
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
-    searchUsers(value);
+    usersResult(value);
   };
 
   // Handle share button click
@@ -115,29 +111,31 @@ export function ShareDocumentDialog({
 
     try {
       // Find user by email
-      const { data: users, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .limit(1);
-
+      // const { data: users, error: userError } = await supabase
+      //   .from('profiles')
+      //   .select('id')
+      //   .eq('email', email)
+      //   .limit(1);
+      const { data: users, error: userError } = await searchUsers(email);
       if (userError) throw userError;
 
+      console.log('users found', users);
       if (!users || users.length === 0) {
         throw new Error('User not found with this email');
       }
 
-      const userId = users[0].id;
+      const userId = users[0]?.id;
+      if (userId) {
+        await shareDocument(documentId, userId, permission);
 
+        // Reload permissions
+        await loadPermissions();
+
+        // Clear form
+        setEmail('');
+        setSearchResults([]);
+      }
       // Share document
-      await shareDocument(documentId, userId, permission);
-
-      // Reload permissions
-      await loadPermissions();
-
-      // Clear form
-      setEmail('');
-      setSearchResults([]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -171,6 +169,16 @@ export function ShareDocumentDialog({
     setEmail(user.email);
     setSearchResults([]);
   };
+
+  // Load existing permissions
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setLink(`${window.location.origin}/document/${documentId}`);
+    }
+    if (isOpen && documentId) {
+      loadPermissions();
+    }
+  }, [isOpen, documentId]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -213,7 +221,7 @@ export function ShareDocumentDialog({
                 placeholder="Enter email address"
                 type="email"
                 value={email}
-                onChange={handleEmailChange}
+                onChange={(e) => handleEmailChange(e)}
               />
               {searchResults.length > 0 && (
                 <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
@@ -277,56 +285,73 @@ export function ShareDocumentDialog({
           </Button>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
-        </div>
 
-        {permissions.length > 0 && (
-          <div className="border-t pt-4">
-            <h3 className="text-sm font-medium mb-2">People with access</h3>
-            <ul className="space-y-2">
-              {permissions.map((perm) => (
-                <li key={perm.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={perm.profiles?.avatar_url || ''} />
-                      <AvatarFallback>
-                        {perm.profiles?.full_name
-                          ?.split(' ')
-                          .map((n: string) => n[0])
-                          .join('') ||
-                          perm.profiles?.email?.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {perm.profiles?.full_name || 'User'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {perm.profiles?.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {perm.permission_level === 'read'
-                        ? 'Can view'
-                        : perm.permission_level === 'write'
-                        ? 'Can edit'
-                        : 'Can manage'}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => handleRemoveAccess(perm.user_id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+          {isPermissionsLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#634AFF]"></div>
+            </div>
+          ) : (
+            <>
+              {permissions.length > 0 && (
+                <div className="border-t pt-4">
+                  <h3 className="text-sm font-medium mb-2">
+                    People with access
+                  </h3>
+                  <ul className="space-y-2">
+                    {permissions.map((perm) => (
+                      <li
+                        key={perm.id}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage
+                              src={perm.profiles?.avatar_url || ''}
+                            />
+                            <AvatarFallback>
+                              {perm.profiles?.full_name
+                                ?.split(' ')
+                                .map((n: string) => n[0])
+                                .join('') ||
+                                perm.profiles?.email
+                                  ?.substring(0, 2)
+                                  .toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">
+                              {perm.profiles?.full_name || 'User'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {perm.profiles?.email}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {perm.permission_level === 'read'
+                              ? 'Can view'
+                              : perm.permission_level === 'write'
+                              ? 'Can edit'
+                              : 'Can manage'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleRemoveAccess(perm.user_id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
