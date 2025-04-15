@@ -33,6 +33,7 @@ export function createDocumentChannel(
     },
   });
 
+  // channel.subscribe();
   return channel;
 }
 

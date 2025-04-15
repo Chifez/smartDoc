@@ -17,7 +17,9 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from '@/app/component/sidebar';
 import { useRouter } from 'next/navigation';
-import CollaborativeEditor from '@/app/component/collboarative-editor';
+// import CollaborativeEditor from '@/app/component/collboarative-editor';
+import CollaborativeEditor from '@/app/component/realtime-editor';
+
 import { ShareDocumentDialog } from '@/app/component/share-document-dialog';
 import {
   AlertDialog,

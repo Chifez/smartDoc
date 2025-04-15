@@ -127,3 +127,18 @@ export interface Database {
     };
   };
 }
+
+export interface UserPresence {
+  id: string;
+  email: string;
+  color: string;
+  position: {
+    x: number;
+    y: number;
+    selection: {
+      from: number;
+      to: number;
+    };
+  } | null;
+  lastActive: number;
+}
