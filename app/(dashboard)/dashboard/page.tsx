@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
-import { DocumentCard } from '../component/document-card';
-import { Logo } from '../component/logo';
+import { DocumentCard } from '../../component/document-card';
+import { Logo } from '../../component/logo';
 import { useDocumentStore } from '@/store/document-store';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
