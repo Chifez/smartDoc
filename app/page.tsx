@@ -28,7 +28,7 @@ export default function LandingPage() {
           Collaborate on documents in real-time
         </h1>
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          smartDoc helps teams create, edit, and share documents seamlessly with
+          Syncro helps teams create, edit, and share documents seamlessly with
           powerful AI assistance.
         </p>
         <Link href="/auth/signup">

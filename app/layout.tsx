@@ -12,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'smartDoc - Real-time Document Collaboration',
-  description: 'Collaborate on documents in real-time with smartDoc',
+  title: 'Syncro - Real-time Document Collaboration',
+  description: 'Collaborate on documents in real-time with Syncro',
 };
 
 export default function RootLayout({

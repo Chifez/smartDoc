@@ -43,7 +43,7 @@ export function Logo({ className, size = 'md' }: LogoProps) {
           'text-lg': size === 'lg',
         })}
       >
-        smartDoc
+        Syncro
       </span>
     </div>
   );
