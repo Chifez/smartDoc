@@ -1,14 +1,18 @@
-import { create } from 'zustand';
-import { useAuthStore } from './auth-store';
-import { Database } from '@/lib/types';
-import { createClient } from '@/lib/utils/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { create } from "zustand";
+import { useAuthStore } from "./auth-store";
+import { Database } from "@/lib/types";
+import { createClient } from "@/lib/utils/supabase/client";
+import { User } from "@supabase/supabase-js";
+import {
+  sendInvitationEmail,
+  sendShareNotificationEmail,
+} from "@/lib/email-service";
 
-type Document = Database['public']['Tables']['documents']['Row'];
-type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
-type DocumentUpdate = Database['public']['Tables']['documents']['Update'];
+type Document = Database["public"]["Tables"]["documents"]["Row"];
+type DocumentInsert = Database["public"]["Tables"]["documents"]["Insert"];
+type DocumentUpdate = Database["public"]["Tables"]["documents"]["Update"];
 type DocumentPermission =
-  Database['public']['Tables']['document_permissions']['Row'];
+  Database["public"]["Tables"]["document_permissions"]["Row"];
 
 interface DocumentState {
   documents: Document[];
@@ -19,21 +23,22 @@ interface DocumentState {
   fetchDocuments: () => Promise<void>;
   fetchDocument: (id: string) => Promise<{ data: Document }>;
   createDocument: (
-    document: Omit<DocumentInsert, 'user_id'>
+    document: Omit<DocumentInsert, "user_id">,
   ) => Promise<string | null>;
   updateDocument: (id: string, document: DocumentUpdate) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
   setCurrentDocument: (document: Document | null) => void;
   shareDocument: (
     documentId: string,
-    userId: string,
-    permissionLevel: 'read' | 'write' | 'admin'
-  ) => Promise<void>;
+    email: string,
+    permissionLevel: "read" | "write" | "admin",
+  ) => Promise<{ success: boolean; permission?: DocumentPermission }>;
   removeDocumentAccess: (documentId: string, userId: string) => Promise<void>;
   getDocumentPermissions: (documentId: string) => Promise<DocumentPermission[]>;
   searchUsers: (
-    query: string
+    query: string,
   ) => Promise<{ data: Partial<User[]>; error: string | null }>;
+  toggleFavorite: (documentId: string) => Promise<void>;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -50,12 +55,12 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const supabase = createClient();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       // Use the security definer function to fetch documents
       const { data: documents, error } = await supabase.rpc(
-        'get_user_documents'
+        "get_user_documents",
       );
 
       if (error) {
@@ -77,12 +82,12 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const supabase = createClient();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       // Use the security definer function to fetch document with permission check
       const { data, error } = (await supabase
-        .rpc('get_document_with_permission', { p_document_id: id })
+        .rpc("get_document_with_permission", { p_document_id: id })
         .single()) as { data: Document | null; error: any };
 
       if (error) {
@@ -91,7 +96,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
       if (!data) {
         throw new Error(
-          'Document not found or you do not have permission to access it'
+          "Document not found or you do not have permission to access it",
         );
       }
 
@@ -109,25 +114,25 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const user = useAuthStore.getState().user;
       const supabase = createClient();
 
-      console.log('Creating document with user:', user);
+      console.log("Creating document with user:", user);
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       // Use the security definer function to create document
-      const { data, error } = await supabase.rpc('create_user_document', {
+      const { data, error } = await supabase.rpc("create_user_document", {
         p_title: document.title,
         p_is_public: document.is_public,
         p_user_id: user.id,
       });
 
       if (error) {
-        console.error('Error creating document:', error);
+        console.error("Error creating document:", error);
         throw error;
       }
 
-      console.log('Document created successfully with ID:', data);
+      console.log("Document created successfully with ID:", data);
 
       // Fetch the newly created document to update the store
       // const { data: newDocument, error: fetchError } = await supabase
@@ -137,7 +142,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       //   .single();
 
       const { data: newDocument, error: fetchError } = (await supabase
-        .rpc('get_document_with_permission', { p_document_id: data })
+        .rpc("get_document_with_permission", { p_document_id: data })
         .single()) as { data: Document; error: any };
 
       if (fetchError) {
@@ -152,7 +157,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
       return data;
     } catch (error: any) {
-      console.error('Error in createDocument:', error);
+      console.error("Error in createDocument:", error);
       set({ error: error.message, isLoading: false });
       return null;
     }
@@ -165,11 +170,11 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const supabase = createClient();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       // Use the security definer function to update document
-      const { data, error } = await supabase.rpc('update_user_document', {
+      const { data, error } = await supabase.rpc("update_user_document", {
         p_document_id: id,
         p_title: document.title,
         p_content: document.content,
@@ -198,14 +203,14 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const supabase = createClient();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       // Check if user has permission to delete this document
       const { data: document, error: docError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', id)
+        .from("documents")
+        .select("*")
+        .eq("id", id)
         .single();
 
       if (docError) {
@@ -213,17 +218,17 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       }
 
       if (document.user_id !== user.id) {
-        throw new Error('You do not have permission to delete this document');
+        throw new Error("You do not have permission to delete this document");
       }
 
       // Delete document permissions first
       await supabase
-        .from('document_permissions')
+        .from("document_permissions")
         .delete()
-        .eq('document_id', id);
+        .eq("document_id", id);
 
       // Delete document
-      const { error } = await supabase.from('documents').delete().eq('id', id);
+      const { error } = await supabase.from("documents").delete().eq("id", id);
 
       if (error) {
         throw error;
@@ -243,30 +248,78 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ currentDocument: document });
   },
 
-  shareDocument: async (documentId, userId, permissionLevel) => {
+  shareDocument: async (documentId, email, permissionLevel) => {
     try {
       set({ isLoading: true, error: null });
       const user = useAuthStore.getState().user;
       const supabase = createClient();
+      const { currentDocument } = get();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
-      // Use the security definer function to share document
-      const { error } = await supabase.rpc('share_document', {
-        p_document_id: documentId,
-        p_user_id: userId,
-        p_permission_level: permissionLevel,
+      // Check if user exists
+      const { data: users, error: searchError } = await supabase.rpc(
+        "search_user_by_email",
+        { p_email: email },
+      );
+
+      if (searchError) throw searchError;
+
+      // If no users found, create invitation
+      if (!users || users.length === 0) {
+        const { data: token, error: invitationError } = await supabase.rpc(
+          "create_document_invitation",
+          {
+            p_document_id: documentId,
+            p_email: email,
+            p_invited_by: user.id,
+          },
+        );
+
+        if (invitationError) throw invitationError;
+
+        // Send invitation email
+        const documentTitle = "Untitled Document";
+        await sendInvitationEmail({
+          to: email,
+          documentTitle,
+          signupLink:
+            `${window.location.origin}/auth/callback?token=:token&invitation=${token}&document=${documentId}`,
+          invitedBy: user.email || "Unknown User",
+        });
+
+        return { success: true, needsInvitation: true };
+      }
+
+      // User exists, create permission
+      const { data: permission, error: permissionError } = await supabase.rpc(
+        "share_document",
+        {
+          p_document_id: documentId,
+          p_user_id: users[0].id,
+          p_permission_level: permissionLevel,
+        },
+      );
+
+      if (permissionError) throw permissionError;
+
+      // Send share notification email
+      const documentTitle = "Untitled Document";
+      await sendShareNotificationEmail({
+        to: email,
+        documentTitle,
+        documentLink:
+          `${window.location.origin}/dashboard/document/${documentId}`,
+        sharedBy: user.email || "Unknown User",
       });
 
-      if (error) {
-        throw error;
-      }
-
-      set({ isLoading: false });
+      return { success: true, permission };
     } catch (error: any) {
+      console.error("Error sharing document:", error);
       set({ error: error.message, isLoading: false });
+      throw error;
     }
   },
 
@@ -277,11 +330,11 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const supabase = createClient();
 
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error("User not authenticated");
       }
 
       // Use the security definer function to remove document access
-      const { data, error } = await supabase.rpc('remove_document_permission', {
+      const { data, error } = await supabase.rpc("remove_document_permission", {
         p_document_id: documentId,
         p_user_id: userId,
         p_requester_id: user.id,
@@ -302,7 +355,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       set({ isPermissionsLoading: true });
       const supabase = createClient();
 
-      const { data, error } = await supabase.rpc('get_document_permissions', {
+      const { data, error } = await supabase.rpc("get_document_permissions", {
         p_document_id: documentId,
       });
 
@@ -322,7 +375,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     if (!query) return { data: [], error: null };
     const supabase = createClient();
     try {
-      const { data, error } = await supabase.rpc('search_user_by_email', {
+      const { data, error } = await supabase.rpc("search_user_by_email", {
         p_email: query,
       });
 
@@ -333,12 +386,50 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         error: null,
       };
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error("Error searching users:", error);
       return {
         data: [],
-        error:
-          error instanceof Error ? error.message : 'Failed to search users',
+        error: error instanceof Error
+          ? error.message
+          : "Failed to search users",
       };
+    }
+  },
+
+  toggleFavorite: async (documentId) => {
+    try {
+      set({ error: null });
+      const user = useAuthStore.getState().user;
+      const supabase = createClient();
+
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // Use the security definer function to toggle favorite
+      const { data: isFavorite, error } = await supabase.rpc(
+        "toggle_document_favorite",
+        {
+          p_document_id: documentId,
+          p_user_id: user.id,
+        },
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      // Update the document in the store
+      set((state) => ({
+        documents: state.documents.map((doc) =>
+          doc.id === documentId ? { ...doc, is_favorite: isFavorite } : doc
+        ),
+        currentDocument: state.currentDocument?.id === documentId
+          ? { ...state.currentDocument, is_favorite: isFavorite }
+          : state.currentDocument,
+      }));
+    } catch (error: any) {
+      set({ error: error.message });
     }
   },
 }));

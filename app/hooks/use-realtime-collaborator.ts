@@ -6,7 +6,7 @@ import {
   trackDocumentUsers,
   type UserPresence,
 } from '@/lib/realtime';
-import { enhanceUsers, fetchUserProfiles } from '@/lib/profileManager';
+import { enhanceUsers, fetchUserProfiles } from '@/lib/profile-manager';
 
 export interface RealtimeCollaborationOptions {
   documentId: string;

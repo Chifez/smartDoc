@@ -5,6 +5,7 @@ import {
   DollarSign,
   BarChart,
   Share,
+  Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatLastEdited } from '@/lib/utils/date';
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useDocument } from '../hooks/use-document';
 import { useAuthStore } from '@/store/auth-store';
+import { useDocumentStore } from '@/store/document-store';
 
 interface DocumentCardProps {
   title: string;
@@ -30,6 +32,7 @@ interface DocumentCardProps {
   className?: string;
   onClick: () => void;
   documentId: string;
+  isFavorite?: boolean;
 }
 
 export function DocumentCard({
@@ -39,11 +42,14 @@ export function DocumentCard({
   className,
   onClick,
   documentId,
+  isFavorite = false,
 }: DocumentCardProps) {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBouncing, setIsBouncing] = useState(false);
   const { user } = useAuthStore();
   const { document } = useDocument(documentId);
+  const { toggleFavorite } = useDocumentStore();
   const isOwner = document?.user_id === user?.id;
   const isAdmin = user?.role === 'admin';
   const canManage = isOwner || isAdmin;
@@ -65,6 +71,13 @@ export function DocumentCard({
     }
   };
 
+  const handleFavorite = async (e: React.MouseEvent) => {
+    // e.stopPropagation();
+    setIsBouncing(true);
+    await toggleFavorite(documentId);
+    setTimeout(() => setIsBouncing(false), 600);
+  };
+
   const handleDelete = async () => {
     await deleteDocument();
   };
@@ -72,20 +85,42 @@ export function DocumentCard({
   return (
     <>
       <div
-        className={cn('document-card rounded-md p-4 bg-[#f9fafb]', className)}
+        className={cn(
+          'document-card rounded-md pb-4 px-4 pt-2 bg-[#f9fafb]',
+          className
+        )}
       >
-        <div className="flex justify-between items-start">
+        <div className="h-fit flex justify-between items-center">
           <div className="mb-2 document-icon">{getIcon()}</div>
-          {canManage && (
+          <p>{isFavorite}</p>
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsShareDialogOpen(true)}
-              className="mb-2"
+              className={cn('mb-2')}
+              onClick={handleFavorite}
             >
-              <Share />
+              <Star
+                className={cn(
+                  'h-5 w-5 transition-all duration-200 scale-110',
+                  isBouncing && 'animate-jelly',
+                  isFavorite
+                    ? 'text-yellow-500 [&>path]:fill-yellow-500'
+                    : 'text-gray-400 [&>path]:fill-none'
+                )}
+              />
             </Button>
-          )}
+            {canManage && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsShareDialogOpen(true)}
+                className="mb-2"
+              >
+                <Share />
+              </Button>
+            )}
+          </div>
         </div>
         <h3 className="font-semibold text-base mb-1">{title}</h3>
         <p className="text-xs text-muted-foreground mb-3">

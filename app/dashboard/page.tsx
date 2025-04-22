@@ -9,6 +9,7 @@ import { DocumentCard } from '../component/document-card';
 import { Logo } from '../component/logo';
 import { useDocumentStore } from '@/store/document-store';
 import { useAuthStore } from '@/store/auth-store';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   // Filter documents by type
   const myDocuments = documents.filter((doc: any) => !doc.permission_level);
   const sharedDocuments = documents.filter((doc: any) => doc.permission_level);
+  const favoriteDocuments = documents.filter((doc: any) => doc.is_favorite);
 
   // Create a new document and navigate to it
   const handleCreateDocument = async () => {
@@ -54,10 +56,12 @@ export default function DashboardPage() {
       } else {
         const error = useDocumentStore.getState().error;
         console.error('Failed to create document:', error);
+        toast.error('error creating document');
         // You might want to show an error message to the user here
       }
     } catch (error) {
       console.error('Error in handleCreateDocument:', error);
+      toast.error('error creating document, please try again');
       // You might want to show an error message to the user here
     }
   };
@@ -137,6 +141,7 @@ export default function DashboardPage() {
                             router.push(`/dashboard/document/${doc.id}`)
                           }
                           documentId={doc.id}
+                          isFavorite={doc.is_favorite}
                         />
                       ))}
                     </div>
@@ -255,14 +260,30 @@ export default function DashboardPage() {
               </TabsContent>
 
               <TabsContent value="favorites">
-                <div className="text-center py-12 mt-6">
-                  <h2 className="text-lg font-semibold mb-2">
-                    No favorites yet
-                  </h2>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Star documents to add them to your favorites
-                  </p>
-                </div>
+                {favoriteDocuments.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {favoriteDocuments.map((doc: any) => (
+                      <DocumentCard
+                        key={doc.id}
+                        title={doc.title}
+                        lastEdited={doc.updated_at}
+                        type="document"
+                        onClick={() => router.push(`/document/${doc.id}`)}
+                        documentId={doc.id}
+                        isFavorite={doc.is_favorite}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 mt-6">
+                    <h2 className="text-lg font-semibold mb-2">
+                      No favorites yet
+                    </h2>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Star documents to add them to your favorites
+                    </p>
+                  </div>
+                )}
               </TabsContent>
             </>
           )}

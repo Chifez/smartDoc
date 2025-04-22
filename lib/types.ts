@@ -31,17 +31,17 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: 'document_permissions_document_id_fkey';
-            columns: ['document_id'];
-            referencedRelation: 'documents';
-            referencedColumns: ['id'];
+            foreignKeyName: "document_permissions_document_id_fkey";
+            columns: ["document_id"];
+            referencedRelation: "documents";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: 'document_permissions_user_id_fkey';
-            columns: ['user_id'];
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          }
+            foreignKeyName: "document_permissions_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       documents: {
@@ -53,6 +53,7 @@ export interface Database {
           title: string;
           updated_at: string;
           user_id: string;
+          is_favorite: boolean;
         };
         Insert: {
           content?: string;
@@ -62,6 +63,7 @@ export interface Database {
           title: string;
           updated_at?: string;
           user_id: string;
+          is_favorite?: boolean;
         };
         Update: {
           content?: string;
@@ -71,14 +73,15 @@ export interface Database {
           title?: string;
           updated_at?: string;
           user_id?: string;
+          is_favorite?: boolean;
         };
         Relationships: [
           {
-            foreignKeyName: 'documents_user_id_fkey';
-            columns: ['user_id'];
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          }
+            foreignKeyName: "documents_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       profiles: {
@@ -105,11 +108,11 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: 'profiles_id_fkey';
-            columns: ['id'];
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          }
+            foreignKeyName: "profiles_id_fkey";
+            columns: ["id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
         ];
       };
     };

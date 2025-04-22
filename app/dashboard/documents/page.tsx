@@ -7,10 +7,22 @@ import { useRouter } from 'next/navigation';
 import { useDocumentStore } from '@/store/document-store';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 export default function DocumentsPage() {
   const router = useRouter();
-  const { createDocument, documents = [] } = useDocumentStore();
+  const { fetchDocuments, createDocument } = useDocumentStore();
+  const {
+    data: documents = [],
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ['documents'],
+    queryFn: async () => {
+      await fetchDocuments();
+      return useDocumentStore.getState().documents;
+    },
+  });
   const [isCreating, setIsCreating] = useState(false);
 
   const handleNewDocument = async () => {
@@ -56,18 +68,31 @@ export default function DocumentsPage() {
       </div>
 
       <div className="w-full p-4 md:p-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documents.map((doc) => (
-            <DocumentCard
-              key={doc.id}
-              title={doc.title}
-              lastEdited={doc.updated_at}
-              type="document"
-              onClick={() => router.push(`/dashboard/document/${doc.id}`)}
-              documentId={doc.id}
-            />
-          ))}
-        </div>
+        {isPending && (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#634AFF]"></div>
+          </div>
+        )}
+        {error && (
+          <div className="flex justify-center items-center h-full">
+            <p>Error loading documents</p>
+          </div>
+        )}
+        {documents.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {documents.map((doc) => (
+              <DocumentCard
+                key={doc.id}
+                title={doc.title}
+                lastEdited={doc.updated_at}
+                type="document"
+                onClick={() => router.push(`/dashboard/document/${doc.id}`)}
+                documentId={doc.id}
+                isFavorite={doc.is_favorite}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -25,6 +25,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Copy, Check, X } from 'lucide-react';
 import { useDocumentStore } from '@/store/document-store';
 import { createClient } from '@/lib/utils/supabase/client';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/store/auth-store';
 
 interface ShareDocumentDialogProps {
   isOpen: boolean;
@@ -47,7 +49,9 @@ export function ShareDocumentDialog({
   const [copied, setCopied] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [link, setLink] = useState('');
+  const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
 
+  const { user } = useAuthStore();
   const {
     getDocumentPermissions,
     shareDocument,
@@ -74,24 +78,23 @@ export function ShareDocumentDialog({
   const usersResult = async (query: string) => {
     if (!query || query.length < 3) {
       setSearchResults([]);
+      setIsExistingUser(null);
       return;
     }
 
-    console.log('query', query, email);
-
     try {
-      // const { data, error } = await supabase
-      //   .from('profiles')
-      //   .select('id, email, full_name, avatar_url')
-      //   .ilike('email', `%${query}%`)
-      //   .limit(5);
       const { data, error } = await searchUsers(query);
-      console.log('search result', data);
       if (error) throw error;
-      setSearchResults(data || []);
+
+      // Filter out the current user
+      const filteredResults =
+        data?.filter((res) => res?.email !== user?.email) || [];
+      setSearchResults(filteredResults);
+      setIsExistingUser(filteredResults.length > 0);
     } catch (err) {
       console.error('Error searching users:', err);
       setSearchResults([]);
+      setIsExistingUser(null);
     }
   };
 
@@ -106,38 +109,43 @@ export function ShareDocumentDialog({
   const handleShare = async () => {
     if (!email) return;
 
+    // Check if trying to share with self
+    if (email === user?.email) {
+      setError('You cannot share a document with yourself');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      // Find user by email
-      // const { data: users, error: userError } = await supabase
-      //   .from('profiles')
-      //   .select('id')
-      //   .eq('email', email)
-      //   .limit(1);
       const { data: users, error: userError } = await searchUsers(email);
       if (userError) throw userError;
 
-      console.log('users found', users);
-      if (!users || users.length === 0) {
-        throw new Error('User not found with this email');
+      // If user exists, share the document
+      if (users && users.length > 0) {
+        const userId = users[0]?.id;
+        if (userId) {
+          const result = await shareDocument(documentId, email, permission);
+          if (result.success) {
+            toast.success('Document shared successfully');
+            await loadPermissions();
+            setEmail('');
+            setSearchResults([]);
+          }
+        }
+      } else {
+        // If user doesn't exist, send invitation
+        const result = await shareDocument(documentId, email, permission);
+        if (result.success) {
+          toast.success('Invitation sent successfully');
+          setEmail('');
+          setSearchResults([]);
+        }
       }
-
-      const userId = users[0]?.id;
-      if (userId) {
-        await shareDocument(documentId, userId, permission);
-
-        // Reload permissions
-        await loadPermissions();
-
-        // Clear form
-        setEmail('');
-        setSearchResults([]);
-      }
-      // Share document
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message || 'Failed to share document');
     } finally {
       setIsLoading(false);
     }
@@ -281,7 +289,11 @@ export function ShareDocumentDialog({
             onClick={handleShare}
             disabled={isLoading || !email}
           >
-            {isLoading ? 'Sharing...' : 'Share'}
+            {isLoading
+              ? 'Processing...'
+              : isExistingUser === false
+              ? 'Invite'
+              : 'Share'}
           </Button>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
