@@ -13,7 +13,7 @@ export default function TestimonialSection() {
   const testimonials = [
     {
       quote:
-        'DocCollab has transformed how our team works together. The real-time collaboration features have made our workflow so much more efficient.',
+        'Syncro has transformed how our team works together. The real-time collaboration features have made our workflow so much more efficient.',
       author: 'Sarah Johnson',
       role: 'Product Manager at TechCorp',
       avatar: '/placeholder.svg?height=80&width=80',
@@ -27,7 +27,7 @@ export default function TestimonialSection() {
     },
     {
       quote:
-        "We've cut our document review time in half since switching to DocCollab. The version history and commenting features are game-changers.",
+        "We've cut our document review time in half since switching to Syncro. The version history and commenting features are game-changers.",
       author: 'Emily Rodriguez',
       role: 'Team Lead at MarketingPro',
       avatar: '/placeholder.svg?height=80&width=80',
@@ -51,7 +51,7 @@ export default function TestimonialSection() {
               Loved by teams everywhere
             </h2>
             <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              See what our customers have to say about how DocCollab has
+              See what our customers have to say about how Syncro has
               transformed their document collaboration workflow.
             </p>
           </div>

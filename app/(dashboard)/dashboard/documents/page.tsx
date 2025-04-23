@@ -2,12 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { DocumentCard } from '../../component/document-card';
+
 import { useRouter } from 'next/navigation';
 import { useDocumentStore } from '@/store/document-store';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { DocumentCard } from '@/app/component/document-card';
 
 export default function DocumentsPage() {
   const router = useRouter();

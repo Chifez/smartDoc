@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { createClient } from '@/lib/utils/supabase/client';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/utils/supabase/client";
 
 interface AuthState {
   user: User | null;
@@ -12,7 +12,7 @@ interface AuthState {
   signUp: (
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
   ) => Promise<{ success: boolean; email: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -22,6 +22,7 @@ interface AuthState {
   }) => Promise<void>;
   checkSession: () => Promise<void>;
   setupAuthListener: () => () => void;
+  signInWithGoogle: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -41,9 +42,9 @@ export const useAuthStore = create<AuthState>()(
           data: { subscription },
         } = supabaseClient.auth.onAuthStateChange(
           async (event: AuthChangeEvent, currentSession: Session | null) => {
-            console.log('Auth state changed:', event);
+            console.log("Auth state changed:", event);
 
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
               // Update user and session in store
               if (currentSession) {
                 const { data: userData } = await supabaseClient.auth.getUser();
@@ -53,11 +54,11 @@ export const useAuthStore = create<AuthState>()(
                   isLoading: false,
                 });
               }
-            } else if (event === 'SIGNED_OUT') {
+            } else if (event === "SIGNED_OUT") {
               // Clear user and session in store
               set({ user: null, session: null, isLoading: false });
             }
-          }
+          },
         );
 
         // Return cleanup function
@@ -141,7 +142,7 @@ export const useAuthStore = create<AuthState>()(
           // Create profile entry
           if (data.user) {
             await supabaseClient
-              .from('profiles')
+              .from("profiles")
               .insert({
                 id: data.user.id,
                 email: email,
@@ -189,7 +190,7 @@ export const useAuthStore = create<AuthState>()(
             email,
             {
               redirectTo: `${window.location.origin}/auth/reset-password`,
-            }
+            },
           );
 
           if (error) {
@@ -211,17 +212,39 @@ export const useAuthStore = create<AuthState>()(
           const supabaseClient = createClient();
 
           if (!user) {
-            throw new Error('User not authenticated');
+            throw new Error("User not authenticated");
           }
 
           // Update profile
           const { error } = await supabaseClient
-            .from('profiles')
+            .from("profiles")
             .update({
               ...data,
               updated_at: new Date().toISOString(),
             })
-            .eq('id', user.id);
+            .eq("id", user.id);
+
+          if (error) {
+            throw error;
+          }
+
+          set({ isLoading: false });
+        } catch (error: any) {
+          set({ error: error.message, isLoading: false });
+        }
+      },
+
+      signInWithGoogle: async () => {
+        try {
+          set({ isLoading: true, error: null });
+          const supabaseClient = createClient();
+
+          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              redirectTo: `${window.location.origin}/auth/callback`,
+            },
+          });
 
           if (error) {
             throw error;
@@ -234,8 +257,8 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       partialize: (state) => ({ user: state.user, session: state.session }),
-    }
-  )
+    },
+  ),
 );

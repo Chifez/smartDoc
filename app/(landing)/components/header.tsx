@@ -3,14 +3,30 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { FileText, Menu, X } from 'lucide-react';
+import { ArrowRight, FileText, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '@/app/component/logo';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogin = () => {
+    router.push('/auth/login');
+  };
+
+  const handleGetStarted = () => {
+    router.push('/auth/register');
+  };
+
+  const handleDashboard = () => {
+    router.push('/dashboard');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,8 +53,8 @@ export default function Header() {
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2">
           {/* <FileText className="h-6 w-6 text-[#634AFF]" /> */}
-          <Logo />
-          <span className="font-bold text-xl">Syncro</span>
+          <Logo className="font-black text-xl" />
+          {/* <span className="font-bold text-xl">Syncro</span> */}
         </Link>
         <nav className="hidden md:flex gap-6">
           <Link
@@ -66,16 +82,32 @@ export default function Header() {
             FAQ
           </Link>
         </nav>
-        <div className="hidden md:flex gap-4">
-          <Link
-            href="#"
-            className="text-sm font-medium text-gray-600 hover:text-[#634AFF] transition-colors"
-          >
-            Sign In
-          </Link>
-          <Button className="bg-[#634AFF] hover:bg-[#5239E0] text-white">
-            Get Started
-          </Button>
+        <div className="hidden md:flex items-center gap-4">
+          {!user ? (
+            <>
+              <Button
+                onClick={handleLogin}
+                variant="outline"
+                className="text-sm font-medium text-gray-600 hover:text-[#634AFF] transition-colors"
+              >
+                Login
+              </Button>
+              <Button
+                onClick={handleGetStarted}
+                className="bg-[#634AFF] hover:bg-[#5239E0] text-white"
+              >
+                Get Started
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={handleDashboard}
+              className="bg-[#634AFF] hover:bg-[#5239E0] text-white"
+            >
+              Dashboard
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          )}
         </div>
         <button
           className="md:hidden"
@@ -127,17 +159,31 @@ export default function Header() {
               >
                 FAQ
               </Link>
-              <div className="flex flex-col gap-2 pt-2 border-t">
-                <Link
-                  href="#"
-                  className="text-sm font-medium text-gray-600 hover:text-[#634AFF] transition-colors py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Button className="bg-[#634AFF] hover:bg-[#5239E0] text-white w-full">
-                  Get Started
-                </Button>
+              <div className="flex flex-col gap-2">
+                {!user ? (
+                  <>
+                    <Button
+                      onClick={handleLogin}
+                      className="text-sm font-medium text-gray-600 hover:text-[#634AFF] transition-colors py-2"
+                    >
+                      Login
+                    </Button>
+                    <Button
+                      onClick={handleGetStarted}
+                      className="bg-[#634AFF] hover:bg-[#5239E0] text-white w-full"
+                    >
+                      Get Started
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={handleDashboard}
+                    className="bg-[#634AFF] hover:bg-[#5239E0] text-white w-full"
+                  >
+                    Dashboard
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </motion.div>

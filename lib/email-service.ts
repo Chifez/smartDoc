@@ -133,6 +133,7 @@ export async function sendInvitationEmail({
   });
 
   console.log("data", data);
+  console.log("error", error);
   if (error) {
     console.error("Error sending invitation email:", error);
     throw error;
@@ -175,6 +176,7 @@ export async function sendShareNotificationEmail({
   });
 
   console.log("data", data);
+  console.log("error", error);
   if (error) {
     console.error("Error sending share notification email:", error);
     throw error;

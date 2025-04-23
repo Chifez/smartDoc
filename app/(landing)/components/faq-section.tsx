@@ -21,7 +21,7 @@ export default function FaqSection() {
         "Our platform allows multiple users to edit the same document simultaneously. Changes are synced in real-time, and you can see who's editing what with colored cursors and highlights.",
     },
     {
-      question: 'Can I use DocCollab offline?',
+      question: 'Can I use Syncro offline?',
       answer:
         'Yes, you can work on documents offline. Changes will automatically sync when you reconnect to the internet.',
     },
@@ -31,17 +31,17 @@ export default function FaqSection() {
         'We use industry-standard encryption to protect your data. All documents are encrypted both in transit and at rest, and we offer advanced permission controls to restrict access.',
     },
     {
-      question: 'Can I integrate DocCollab with other tools?',
+      question: 'Can I integrate Syncro with other tools?',
       answer:
         'Yes, we offer integrations with popular tools like Slack, Google Drive, Dropbox, and more. We also have an API for custom integrations.',
     },
     {
       question: 'What file formats are supported?',
       answer:
-        'DocCollab supports a wide range of file formats including .docx, .pdf, .txt, .md, and more. You can import and export documents in these formats.',
+        'Syncro supports a wide range of file formats including .docx, .pdf, .txt, .md, and more. You can import and export documents in these formats.',
     },
     {
-      question: 'How do I get started with DocCollab?',
+      question: 'How do I get started with Syncro?',
       answer:
         'Simply sign up for a free account, create your first document, and invite collaborators. Our intuitive interface makes it easy to get started right away.',
     },
@@ -64,8 +64,8 @@ export default function FaqSection() {
               Frequently asked questions
             </h2>
             <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Find answers to common questions about DocCollab and how it can
-              help your team collaborate more effectively.
+              Find answers to common questions about Syncro and how it can help
+              your team collaborate more effectively.
             </p>
           </div>
         </motion.div>

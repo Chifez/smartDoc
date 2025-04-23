@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { FileText, Twitter, Linkedin, Github, Instagram } from 'lucide-react';
+import { Logo } from '@/app/component/logo';
 
 export default function Footer() {
   return (
@@ -8,8 +9,9 @@ export default function Footer() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-[#634AFF]" />
-              <span className="font-bold text-xl">Syncro</span>
+              {/* <FileText className="h-6 w-6 text-[#634AFF]" />
+              <span className="font-bold text-xl">Syncro</span> */}
+              <Logo className="font-bold text-xl" />
             </Link>
             <p className="text-sm text-gray-500 max-w-xs">
               Create, edit, and collaborate on documents in real-time with your

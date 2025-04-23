@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Calendar, User, Clock } from 'lucide-react';
-import Header from '../components/header';
-import Footer from '../components/footer';
+import Header from '@/app/(landing)/components/header';
+import Footer from '@/app/(landing)/components/footer';
 
 export default function BlogPage() {
   const featuredPost = {

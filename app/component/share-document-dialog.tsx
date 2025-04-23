@@ -48,7 +48,7 @@ export function ShareDocumentDialog({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [link, setLink] = useState('');
+  const [shareLink, setShareLink] = useState<string | null>(null);
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
 
   const { user } = useAuthStore();
@@ -128,6 +128,10 @@ export function ShareDocumentDialog({
         if (userId) {
           const result = await shareDocument(documentId, email, permission);
           if (result.success) {
+            // Set the share link for existing users
+            setShareLink(
+              `${window.location.origin}/dashboard/document/${documentId}`
+            );
             toast.success('Document shared successfully');
             await loadPermissions();
             setEmail('');
@@ -135,9 +139,13 @@ export function ShareDocumentDialog({
           }
         }
       } else {
-        // If user doesn't exist, send invitation
+        // If user doesn't exist, create invitation
         const result = await shareDocument(documentId, email, permission);
         if (result.success) {
+          // Set the invitation link for new users
+          setShareLink(
+            `${window.location.origin}/auth/callback?token=:token&invitation=${result.token}&document=${documentId}`
+          );
           toast.success('Invitation sent successfully');
           setEmail('');
           setSearchResults([]);
@@ -166,10 +174,11 @@ export function ShareDocumentDialog({
 
   // Handle copy link
   const handleCopyLink = () => {
-    // const link = `${window && window.location.origin}/document/${documentId}`;
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   // Handle select user from search results
@@ -180,9 +189,6 @@ export function ShareDocumentDialog({
 
   // Load existing permissions
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setLink(`${window.location.origin}/document/${documentId}`);
-    }
     if (isOpen && documentId) {
       loadPermissions();
     }
@@ -199,27 +205,29 @@ export function ShareDocumentDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="flex items-center space-x-2">
-            <div className="grid flex-1 gap-2">
-              <Label htmlFor="link" className="sr-only">
-                Link
-              </Label>
-              <Input id="link" defaultValue={link} readOnly className="h-9" />
+          {shareLink && (
+            <div className="flex items-center space-x-2">
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="link" className="sr-only">
+                  {isExistingUser ? 'Share Link' : 'Invitation Link'}
+                </Label>
+                <Input id="link" value={shareLink} readOnly className="h-9" />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="px-3"
+                onClick={handleCopyLink}
+              >
+                {copied ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+                <span className="sr-only">Copy link</span>
+              </Button>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              className="px-3"
-              onClick={handleCopyLink}
-            >
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              <span className="sr-only">Copy link</span>
-            </Button>
-          </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="email">Email address</Label>

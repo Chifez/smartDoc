@@ -5,7 +5,7 @@ import type React from 'react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
-import { Sidebar } from '../component/sidebar';
+import { Sidebar } from '@/app/component/sidebar';
 
 export default function DashboardLayout({
   children,

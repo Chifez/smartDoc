@@ -32,7 +32,12 @@ interface DocumentState {
     documentId: string,
     email: string,
     permissionLevel: "read" | "write" | "admin",
-  ) => Promise<{ success: boolean; permission?: DocumentPermission }>;
+  ) => Promise<{
+    success: boolean;
+    permission?: DocumentPermission;
+    token?: string;
+    needsInvitation?: boolean;
+  }>;
   removeDocumentAccess: (documentId: string, userId: string) => Promise<void>;
   getDocumentPermissions: (documentId: string) => Promise<DocumentPermission[]>;
   searchUsers: (
@@ -290,7 +295,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
           invitedBy: user.email || "Unknown User",
         });
 
-        return { success: true, needsInvitation: true };
+        return { success: true, needsInvitation: true, token };
       }
 
       // User exists, create permission
