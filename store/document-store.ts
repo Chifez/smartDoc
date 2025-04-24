@@ -44,6 +44,7 @@ interface DocumentState {
     query: string,
   ) => Promise<{ data: Partial<User[]>; error: string | null }>;
   toggleFavorite: (documentId: string) => Promise<void>;
+  hasMultipleUsers: (documentId: string) => Promise<boolean>;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -435,6 +436,17 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       }));
     } catch (error: any) {
       set({ error: error.message });
+    }
+  },
+
+  hasMultipleUsers: async (documentId) => {
+    try {
+      const permissions = await get().getDocumentPermissions(documentId);
+      console.log("permissions", permissions);
+      return permissions && permissions.length >= 1;
+    } catch (error) {
+      console.error("Error checking document users:", error);
+      return false;
     }
   },
 }));

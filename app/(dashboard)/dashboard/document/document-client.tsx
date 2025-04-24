@@ -13,13 +13,13 @@ import {
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from '@/app/component/sidebar';
 import { useRouter } from 'next/navigation';
 // import CollaborativeEditor from '@/app/component/collboarative-editor';
 import CollaborativeEditor from '@/app/component/realtime-editor';
-
+import SimpleEditor from '@/app/component/simple-editor';
 import { ShareDocumentDialog } from '@/app/component/share-document-dialog';
 import {
   AlertDialog,
@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useDocument } from '@/app/hooks/use-document';
 import { useAuthStore } from '@/store/auth-store';
+import { useDocumentStore } from '@/store/document-store';
 
 export default function DocumentClient({ id }: { id: string }) {
   const router = useRouter();
@@ -40,6 +41,7 @@ export default function DocumentClient({ id }: { id: string }) {
   const [content, setContent] = useState<string>('{"type":"doc","content":[]}');
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [hasMultipleUsers, setHasMultipleUsers] = useState(false);
 
   const {
     document,
@@ -52,8 +54,18 @@ export default function DocumentClient({ id }: { id: string }) {
   } = useDocument(id);
 
   const { user } = useAuthStore();
+  const { hasMultipleUsers: checkMultipleUsers } = useDocumentStore();
   const isAdmin = user?.role === 'admin';
   const canManage = isOwner || isAdmin;
+
+  // Check if document has multiple users
+  useEffect(() => {
+    const checkUsers = async () => {
+      const result = await checkMultipleUsers(id);
+      setHasMultipleUsers(result);
+    };
+    checkUsers();
+  }, [id, checkMultipleUsers]);
 
   // Update local state when document data changes
   if (document && title !== document.title) {
@@ -229,13 +241,22 @@ export default function DocumentClient({ id }: { id: string }) {
               </div>
 
               <div className="min-h-[300px] prose prose-sm max-w-none placeholder:text-muted-foreground">
-                <CollaborativeEditor
-                  key={id}
-                  placeholder="Start writing or paste your text..."
-                  initialContent={content}
-                  documentId={id}
-                  onChange={handleContentChange}
-                />
+                {hasMultipleUsers ? (
+                  <CollaborativeEditor
+                    key={id}
+                    placeholder="Start writing or paste your text..."
+                    initialContent={content}
+                    documentId={id}
+                    onChange={handleContentChange}
+                  />
+                ) : (
+                  <SimpleEditor
+                    key={id}
+                    placeholder="Start writing or paste your text..."
+                    initialContent={content}
+                    onChange={handleContentChange}
+                  />
+                )}
               </div>
 
               <div className="mt-8 ai-assistant-bg rounded-lg p-4">
