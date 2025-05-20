@@ -16,11 +16,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Logo } from './logo';
 import { useAuthStore } from '@/store/auth-store';
 import { useDocumentStore } from '@/store/document-store';
 import { useRouter } from 'next/navigation';
+import Draggable from 'react-draggable';
+
 interface SidebarProps {
   className?: string;
 }
@@ -31,6 +33,44 @@ export function Sidebar({ className }: SidebarProps) {
   const { signOut } = useAuthStore();
   const { createDocument } = useDocumentStore();
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Load saved position from localStorage on component mount
+  useEffect(() => {
+    const savedPosition = localStorage.getItem('menuButtonPosition');
+    if (savedPosition) {
+      setPosition(JSON.parse(savedPosition));
+    } else if (nodeRef.current && buttonRef.current) {
+      // Calculate initial position based on container and button dimensions
+      const container = nodeRef.current.getBoundingClientRect();
+      const button = buttonRef.current.getBoundingClientRect();
+
+      // Position in bottom right with some padding
+      const x = container.width - button.width - 20;
+      const y = container.height - button.height - 20;
+
+      setPosition({ x, y });
+    }
+  }, []);
+
+  // Save position to localStorage when it changes
+  useEffect(() => {
+    if (!isDragging) {
+      localStorage.setItem('menuButtonPosition', JSON.stringify(position));
+    }
+  }, [position, isDragging]);
+
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleDragStop = (e: any, data: { x: number; y: number }) => {
+    setIsDragging(false);
+    setPosition({ x: data.x, y: data.y });
+  };
 
   const handleNewDocument = async () => {
     const newDocId = await createDocument({
@@ -141,10 +181,39 @@ export function Sidebar({ className }: SidebarProps) {
     <>
       {/* Mobile Sidebar */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild className="md:hidden">
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <Menu className="h-5 w-5" />
-          </Button>
+        <SheetTrigger asChild>
+          <div className="fixed inset-0 pointer-events-none">
+            <Draggable
+              position={position}
+              onStart={handleDragStart}
+              onStop={handleDragStop}
+              bounds="parent"
+              defaultPosition={{ x: 0, y: 0 }}
+              nodeRef={nodeRef as React.RefObject<HTMLElement>}
+            >
+              <div
+                className="fixed z-50 md:hidden pointer-events-auto"
+                style={{ touchAction: 'none' }}
+                ref={nodeRef}
+              >
+                <Button
+                  ref={buttonRef}
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    'h-12 w-12 rounded-full bg-[#634AFF] hover:bg-[#5239E0] shadow-lg transition-all duration-200',
+                    isDragging ? 'scale-110' : 'scale-100'
+                  )}
+                  style={{
+                    cursor: 'grab',
+                    touchAction: 'none',
+                  }}
+                >
+                  <Menu className="h-6 w-6 text-white" />
+                </Button>
+              </div>
+            </Draggable>
+          </div>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0 bg-[#1E1E1E] text-white">
           <SidebarContent />

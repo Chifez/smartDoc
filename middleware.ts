@@ -4,13 +4,13 @@ import { createClient } from "@/lib/utils/supabase/server";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  // const supabase = await createClient();
+  const supabase = await createClient();
 
   try {
-    // const {
-    //   data: { user },
-    // } = await supabase.auth.getUser();
-    const user = null;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    // const user = null;
     console.log("Middleware user:", user);
 
     // Check if the user is authenticated
@@ -30,9 +30,9 @@ export async function middleware(req: NextRequest) {
     }
 
     // If the user is not authenticated and not on the landing page or auth page, redirect to landing page
-    // if (!isAuthenticated && !isAuthPage && !isLandingPage) {
-    //   return NextResponse.redirect(new URL("/", req.url));
-    // }
+    if (!isAuthenticated && !isAuthPage && !isLandingPage) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
 
     return res;
   } catch (error) {

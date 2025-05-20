@@ -11,6 +11,7 @@ import {
   Menu,
   Loader2,
   Trash2,
+  EllipsisVertical,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -31,6 +32,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
 import { useDocument } from '@/app/hooks/use-document';
 import { useAuthStore } from '@/store/auth-store';
 import { useDocumentStore } from '@/store/document-store';
@@ -109,7 +115,7 @@ export default function DocumentClient({ id }: { id: string }) {
               <h1 className="text-xl font-semibold">Edit Document</h1>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-4">
                 {canManage && (
                   <Button
                     variant="outline"
@@ -146,22 +152,35 @@ export default function DocumentClient({ id }: { id: string }) {
                   )}
                 </Button>
               </div>
-
-              <Sheet>
-                <SheetTrigger asChild className="md:hidden">
+              <div className="md:hidden flex items-center justify-end gap-2">
+                <Button
+                  className="bg-[#634AFF] hover:bg-[#5338FF] text-white rounded-md h-9 px-4 text-sm font-medium"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Save'
+                  )}
+                </Button>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild className="md:hidden">
                   <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
+                    <EllipsisVertical className="h-5 w-5" />
                   </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-64 p-0">
-                  <div className="p-4 border-b">
-                    <h2 className="text-lg font-medium">Document Options</h2>
-                  </div>
-
-                  <div className="p-4 space-y-4">
+                </PopoverTrigger>
+                <PopoverContent
+                  side="bottom"
+                  sideOffset={10}
+                  align="center"
+                  className="w-44 p-0"
+                >
+                  <div className="p-2 space-y-4">
                     {canManage && (
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         className="w-full justify-start gap-2"
                         onClick={() => setIsShareDialogOpen(true)}
@@ -171,7 +190,7 @@ export default function DocumentClient({ id }: { id: string }) {
                       </Button>
                     )}
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       className={`w-full justify-start gap-2 ${
                         canManage
@@ -183,17 +202,17 @@ export default function DocumentClient({ id }: { id: string }) {
                       <Trash2 className="h-4 w-4" />
                       {canManage ? 'Delete' : 'Remove Access'}
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       size="sm"
                       className="w-full justify-start gap-2"
                     >
                       <History className="h-4 w-4" />
                       View History
-                    </Button>
+                    </Button> */}
                   </div>
-                </SheetContent>
-              </Sheet>
+                </PopoverContent>
+              </Popover>
             </div>
           </header>
 

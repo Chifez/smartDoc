@@ -158,7 +158,7 @@ export default function DashboardPage() {
                         <DocumentCard
                           key={doc.id}
                           title={doc.title}
-                          lastEdited={`Shared • ${doc.updated_at}`}
+                          lastEdited={doc.updated_at}
                           type="document"
                           onClick={() =>
                             router.push(`/dashboard/document/${doc.id}`)
