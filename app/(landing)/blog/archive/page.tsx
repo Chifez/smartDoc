@@ -1,14 +1,14 @@
 'use client';
 
+import { blogPosts } from '@/lib/mock-data';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Calendar, User, Clock } from 'lucide-react';
+import { Calendar, Clock, User } from 'lucide-react';
 import Header from '@/app/(landing)/components/header';
 import Footer from '@/app/(landing)/components/footer';
-import { blogPosts } from '@/lib/mock-data';
 import { useSearchParams } from 'next/navigation';
 
-export default function BlogPage() {
+export default function BlogArchivePage() {
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get('category');
 
@@ -37,26 +37,20 @@ export default function BlogPage() {
         })
       : blogPosts;
 
-  const featuredPost =
-    filteredPosts.find((post) => post.isFeatured) || filteredPosts[0];
-  const recentPosts = filteredPosts
-    .filter((post) => !post.isFeatured)
-    .slice(0, 5);
-
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-20 md:py-28 bg-gradient-to-b from-purple-50 to-white">
+        <section className="py-12 md:py-16 bg-gradient-to-b from-purple-50 to-white">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center text-center space-y-4">
               <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-                  Syncro <span className="text-[#634AFF]">Blog</span>
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                  Blog <span className="text-[#634AFF]">Archive</span>
                 </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed">
-                  Insights, tips, and news about document collaboration and
+                <p className="mx-auto max-w-[700px] text-gray-500 md:text-lg">
+                  Browse all our articles about document collaboration and
                   productivity.
                 </p>
               </div>
@@ -65,7 +59,7 @@ export default function BlogPage() {
         </section>
 
         {/* Categories */}
-        <section className="py-8 border-b">
+        <section className="py-6 border-b">
           <div className="container px-4 md:px-6">
             <div className="flex flex-wrap gap-2 justify-center">
               {categories.map((category) => {
@@ -77,8 +71,8 @@ export default function BlogPage() {
                     key={category}
                     href={
                       category === 'All Posts'
-                        ? '/blog'
-                        : `/blog?category=${category}`
+                        ? '/blog/archive'
+                        : `/blog/archive?category=${category}`
                     }
                     className={`px-4 py-2 rounded-full text-sm transition-colors ${
                       isSelected
@@ -94,63 +88,13 @@ export default function BlogPage() {
           </div>
         </section>
 
-        {filteredPosts.length > 0 ? (
-          <>
-            {/* Featured Post */}
-            <section className="py-12">
-              <div className="container px-4 md:px-6">
-                <h2 className="text-2xl font-bold mb-8">Featured Post</h2>
-                <div className="grid lg:grid-cols-2 gap-8 items-center">
-                  <div className="relative h-[300px] lg:h-[400px] rounded-xl overflow-hidden">
-                    <Image
-                      src={featuredPost.featuredImage || '/placeholder.svg'}
-                      alt={featuredPost.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {new Date(featuredPost.publishedAt).toLocaleDateString(
-                          'en-US',
-                          {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          }
-                        )}
-                      </div>
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-1" />
-                        {featuredPost.author.name}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {featuredPost.readTime}
-                      </div>
-                    </div>
-                    <h3 className="text-3xl font-bold">{featuredPost.title}</h3>
-                    <p className="text-gray-500">{featuredPost.excerpt}</p>
-                    <Link
-                      href={`/blog/${featuredPost.slug}`}
-                      className="inline-flex items-center text-[#634AFF] font-medium hover:underline"
-                    >
-                      Read more
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Recent Posts */}
-            <section className="py-12 bg-gray-50">
-              <div className="container px-4 md:px-6">
-                <h2 className="text-2xl font-bold mb-8">Recent Posts</h2>
+        {/* All Posts */}
+        <section className="py-12">
+          <div className="container px-4 md:px-6">
+            {filteredPosts.length > 0 ? (
+              <>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {recentPosts.map((post) => (
+                  {filteredPosts.map((post) => (
                     <div
                       key={post.id}
                       className="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm"
@@ -207,22 +151,24 @@ export default function BlogPage() {
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-center mt-12">
-                  <Link
-                    href={`/blog/archive${
-                      selectedCategory ? `?category=${selectedCategory}` : ''
-                    }`}
-                    className="inline-flex h-10 items-center justify-center rounded-md border border-[#634AFF] bg-white px-8 text-sm font-medium text-[#634AFF] shadow-sm transition-colors hover:bg-[#634AFF]/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    View all posts
-                  </Link>
+
+                {/* Pagination */}
+                <div className="flex justify-center mt-12 gap-2">
+                  <button className="inline-flex h-10 items-center justify-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none">
+                    Previous
+                  </button>
+                  <button className="inline-flex h-10 items-center justify-center rounded-md bg-[#634AFF] px-4 text-sm font-medium text-white hover:bg-[#5239E0]">
+                    1
+                  </button>
+                  <button className="inline-flex h-10 items-center justify-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    2
+                  </button>
+                  <button className="inline-flex h-10 items-center justify-center rounded-md border border-gray-200 bg-white px-4 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Next
+                  </button>
                 </div>
-              </div>
-            </section>
-          </>
-        ) : (
-          <section className="py-12">
-            <div className="container px-4 md:px-6">
+              </>
+            ) : (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-bold mb-4">No posts found</h2>
                 <p className="text-gray-500 mb-8">
@@ -230,25 +176,25 @@ export default function BlogPage() {
                   different category.
                 </p>
                 <Link
-                  href="/blog"
+                  href="/blog/archive"
                   className="inline-flex h-10 items-center justify-center rounded-md bg-[#634AFF] px-4 text-sm font-medium text-white hover:bg-[#5239E0] transition-colors"
                 >
                   View all posts
                 </Link>
               </div>
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
 
         {/* Newsletter */}
-        <section className="py-20">
+        <section className="py-16 bg-gray-50">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center text-center space-y-4">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl">
                   Subscribe to our newsletter
                 </h2>
-                <p className="mx-auto max-w-[600px] text-gray-500 md:text-lg">
+                <p className="mx-auto max-w-[600px] text-gray-500">
                   Get the latest insights and tips on document collaboration
                   delivered to your inbox.
                 </p>

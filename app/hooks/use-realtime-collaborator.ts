@@ -1,18 +1,19 @@
 // src/components/collaborative-editor/hooks/useRealtimeCollaboration.ts
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { type RealtimeChannel } from '@supabase/supabase-js';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { type RealtimeChannel } from "@supabase/supabase-js";
 import {
   createDocumentChannel,
   trackDocumentUsers,
   type UserPresence,
-} from '@/lib/realtime';
-import { enhanceUsers, fetchUserProfiles } from '@/lib/profile-manager';
+} from "@/lib/realtime";
+import { enhanceUsers, fetchUserProfiles } from "@/lib/profile-manager";
+import { EditorStateManager } from "@/lib/editor-state-manager";
 
 export interface RealtimeCollaborationOptions {
   documentId: string;
   user: any;
   onUserUpdate: (users: Record<string, UserPresence>) => void;
-  onConnectionChange?: (status: 'connected' | 'disconnected') => void;
+  onConnectionChange?: (status: "connected" | "disconnected") => void;
 }
 
 export function useRealtimeCollaboration({
@@ -25,6 +26,17 @@ export function useRealtimeCollaboration({
   const [connected, setConnected] = useState(false);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const isSubscribing = useRef(false);
+  const stateManager = useRef<EditorStateManager | null>(null);
+
+  // Initialize state manager
+  useEffect(() => {
+    if (user) {
+      stateManager.current = new EditorStateManager(user.id);
+    }
+    return () => {
+      stateManager.current?.cleanup();
+    };
+  }, [user]);
 
   // Handle user tracking with profile enrichment
   const handleUserTracking = useCallback(
@@ -33,11 +45,10 @@ export function useRealtimeCollaboration({
         const userIds = Object.keys(users);
         const profiles = await fetchUserProfiles(userIds);
         const enhancedUsers = enhanceUsers(users, profiles);
-        console.log('enhancedUsers', enhancedUsers);
         onUserUpdate(enhancedUsers);
       });
     },
-    [user, onUserUpdate]
+    [onUserUpdate],
   );
 
   // Setup heartbeat to maintain user presence
@@ -50,8 +61,8 @@ export function useRealtimeCollaboration({
       return setInterval(() => {
         if (newChannel && connected && user) {
           newChannel.send({
-            type: 'broadcast',
-            event: 'presence:heartbeat',
+            type: "broadcast",
+            event: "presence:heartbeat",
             payload: {
               user_id: user.id,
               timestamp: Date.now(),
@@ -60,7 +71,7 @@ export function useRealtimeCollaboration({
         }
       }, 30000);
     },
-    [connected, user]
+    [connected],
   );
 
   // Initialize and manage channel lifecycle
@@ -69,6 +80,7 @@ export function useRealtimeCollaboration({
 
     let newChannel: RealtimeChannel | null = null;
     let userTrackingCleanup: Promise<() => void> | null = null;
+    let isSubscribed = false;
 
     const initializeChannel = async () => {
       if (isSubscribing.current) return;
@@ -78,22 +90,33 @@ export function useRealtimeCollaboration({
         newChannel = createDocumentChannel(documentId, user);
         if (!newChannel) return;
 
-        setChannel(newChannel);
-
         // Subscribe and track connection status
-        newChannel.subscribe((status) => {
-          const isConnected = status === 'SUBSCRIBED';
-          setConnected(isConnected);
-          onConnectionChange?.(isConnected ? 'connected' : 'disconnected');
-        });
-
+        if (!isSubscribed) {
+          newChannel.subscribe((status) => {
+            const isConnected = status === "SUBSCRIBED";
+            setConnected(isConnected);
+            onConnectionChange?.(isConnected ? "connected" : "disconnected");
+          });
+          isSubscribed = true;
+        }
+        setChannel(newChannel);
         // Set up user tracking
         userTrackingCleanup = handleUserTracking(newChannel);
 
         // Setup heartbeat
         heartbeatInterval.current = setupHeartbeat(newChannel);
+
+        // Notify other users that we've joined
+        newChannel.send({
+          type: "broadcast",
+          event: "user:join",
+          payload: {
+            user_id: user.id,
+            timestamp: Date.now(),
+          },
+        });
       } catch (error) {
-        console.error('Error initializing channel:', error);
+        console.error("Error initializing channel:", error);
       } finally {
         isSubscribing.current = false;
       }
@@ -126,5 +149,6 @@ export function useRealtimeCollaboration({
   return {
     channel,
     connected,
+    stateManager: stateManager.current,
   };
 }

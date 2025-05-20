@@ -349,7 +349,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       if (error) {
         throw error;
       }
-
+      console.log("remove access data", data);
       set({ isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });

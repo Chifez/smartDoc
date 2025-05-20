@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useEffect, useRef } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { type UserPresence } from '@/lib/realtime';
 import { WifiOff } from 'lucide-react';
@@ -11,6 +11,7 @@ import EditorLoading from './editor-loader';
 import EditorToolbar from './editor-toolbar';
 import ConnectionIndicator from './connection-info';
 import ActiveUsers from './active-users';
+import { debounce } from 'lodash';
 
 // Interface definitions
 interface CollaborativeEditorProps {
@@ -35,9 +36,10 @@ const CollaborativeEditor = memo(
     const [connectionStatus, setConnectionStatus] = useState<
       'connected' | 'disconnected'
     >('connected');
+    const isLocalUpdate = useRef(false);
 
     // Set up realtime collaboration
-    const { channel, connected } = useRealtimeCollaboration({
+    const { channel, connected, stateManager } = useRealtimeCollaboration({
       documentId,
       user,
       onUserUpdate: setActiveUsers,
@@ -47,11 +49,41 @@ const CollaborativeEditor = memo(
     // Initialize document editor
     const { editor, handleMouseMove } = useDocumentEditor({
       initialContent,
-      onChange,
+      onChange: (content) => {
+        if (!isLocalUpdate.current) {
+          onChange(content);
+        }
+      },
       placeholder,
       channel,
       user,
     });
+
+    // Initialize state manager with editor
+    useEffect(() => {
+      if (editor && channel && stateManager) {
+        stateManager.initialize(editor, channel);
+      }
+    }, [editor, channel, stateManager]);
+
+    // Handle editor updates
+    useEffect(() => {
+      if (!editor || !stateManager) return;
+
+      const handleUpdate = debounce(({ editor }) => {
+        if (!isLocalUpdate.current) {
+          const json = JSON.stringify(editor.getJSON());
+          stateManager.updateContent(json);
+        }
+      }, 300);
+
+      editor.on('update', handleUpdate);
+
+      return () => {
+        editor.off('update', handleUpdate);
+        handleUpdate.cancel();
+      };
+    }, [editor, stateManager]);
 
     // Show loading state if editor isn't ready
     if (!editor) {
@@ -102,5 +134,3 @@ const CollaborativeEditor = memo(
 CollaborativeEditor.displayName = 'CollaborativeEditor';
 
 export default CollaborativeEditor;
-
-// Missing import fix - added at the end to avoid confusion

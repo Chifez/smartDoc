@@ -90,7 +90,7 @@ export default function HeroSection() {
             transition={{ delay: 0.3, duration: 0.6 }}
             className="lg:h-[500px] flex items-center justify-center"
           >
-            <ThreeDDocument />
+            {/* <ThreeDDocument /> */}
           </motion.div>
         </div>
       </div>
