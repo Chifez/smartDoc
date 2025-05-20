@@ -39,7 +39,7 @@ export default function BlogArchivePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {/* <Header /> */}
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-12 md:py-16 bg-gradient-to-b from-purple-50 to-white">
@@ -101,7 +101,7 @@ export default function BlogArchivePage() {
                     >
                       <div className="relative h-48 w-full">
                         <Image
-                          src={post.featuredImage || '/placeholder.svg'}
+                          src={post.featuredImage || '/corporate.jpg'}
                           alt={post.title}
                           fill
                           className="object-cover"
@@ -216,7 +216,7 @@ export default function BlogArchivePage() {
           </div>
         </section>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

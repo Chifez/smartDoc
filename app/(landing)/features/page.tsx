@@ -13,7 +13,7 @@ export default function FeaturesPage() {
     collaboration: 'Collaboration',
     security: 'Security',
     productivity: 'Productivity',
-    integration: 'Integration',
+    // integration: 'Integration',
   };
 
   return (
@@ -32,7 +32,7 @@ export default function FeaturesPage() {
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
               Everything you need for document collaboration
             </h1>
-            <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            <p className="mx-auto max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
               Discover the powerful features that make Syncro the perfect tool
               for your team's document collaboration needs.
             </p>

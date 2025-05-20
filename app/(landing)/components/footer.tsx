@@ -6,14 +6,14 @@ export default function Footer() {
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
       <div className="container px-4 py-12 md:px-6 md:py-16">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-4">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
+          <div className="space-y-4 lg:col-span-4 w-full">
             <Link href="/" className="flex items-center gap-2">
               {/* <FileText className="h-6 w-6 text-[#634AFF]" />
               <span className="font-bold text-xl">Syncro</span> */}
               <Logo className="font-bold text-xl" />
             </Link>
-            <p className="text-sm text-gray-500 max-w-xs">
+            <p className="text-sm text-gray-500 max-w-sm">
               Create, edit, and collaborate on documents in real-time with your
               team. Work together seamlessly with powerful editing tools.
             </p>

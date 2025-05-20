@@ -11,7 +11,7 @@ import TestimonialSection from './components/testimonial-section';
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {/* <Header /> */}
 
       <main className="flex-1">
         <HeroSection />
@@ -106,7 +106,7 @@ export default function Home() {
         </section>
       </main>
 
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

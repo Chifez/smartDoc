@@ -97,7 +97,7 @@ export default function DocumentationPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {/* <Header /> */}
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 md:py-28 bg-gradient-to-b from-purple-50 to-white">
@@ -265,7 +265,7 @@ export default function DocumentationPage() {
                 </p>
                 <Link
                   href="/community"
-                  className="inline-flex h-10 items-center justify-center rounded-md bg-[#634AFF] px-4 text-sm font-medium text-white shadow transition-colors hover:bg-[#5239E0] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  className="w-fit inline-flex h-10 items-center justify-center rounded-md bg-[#634AFF] px-4 text-sm font-medium text-white shadow transition-colors hover:bg-[#5239E0] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                 >
                   Join Community
                 </Link>
@@ -281,7 +281,7 @@ export default function DocumentationPage() {
                 </p>
                 <Link
                   href="/support"
-                  className="inline-flex h-10 items-center justify-center rounded-md bg-[#634AFF] px-4 text-sm font-medium text-white shadow transition-colors hover:bg-[#5239E0] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  className="w-fit inline-flex h-10 items-center justify-center rounded-md bg-[#634AFF] px-4 text-sm font-medium text-white shadow transition-colors hover:bg-[#5239E0] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                 >
                   Contact Support
                 </Link>
@@ -290,7 +290,7 @@ export default function DocumentationPage() {
           </div>
         </section>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

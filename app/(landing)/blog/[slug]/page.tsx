@@ -76,7 +76,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {/* <Header /> */}
       <main className="flex-1">
         {/* Back to Blog Link */}
         <div className="border-b">
@@ -139,7 +139,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {/* Featured Image */}
         <div className="relative h-[400px] md:h-[300px] border border-black max-w-4xl mx-auto ">
           <Image
-            src={post.featuredImage || '/placeholder.svg'}
+            src={post.featuredImage || '/corporate.jpg'}
             alt={post.title}
             fill
             className="object-cover mx-auto "
@@ -270,7 +270,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
         </section>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

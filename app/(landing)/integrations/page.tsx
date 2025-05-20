@@ -12,7 +12,6 @@ export default function IntegrationsPage() {
   const isInView = useInView(ref, { once: true, amount: 0.2 });
 
   const categories = {
-    productivity: 'Productivity',
     communication: 'Communication',
     storage: 'Storage',
     development: 'Development',

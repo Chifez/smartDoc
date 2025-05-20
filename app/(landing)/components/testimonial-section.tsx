@@ -74,7 +74,7 @@ export default function TestimonialSection() {
               <p className="text-gray-600 italic">"{testimonial.quote}"</p>
               <div className="flex items-center space-x-4">
                 <Image
-                  src={testimonial.avatar || '/placeholder.svg'}
+                  src={testimonial.avatar || '/corporate.jpg'}
                   alt={testimonial.author}
                   width={50}
                   height={50}

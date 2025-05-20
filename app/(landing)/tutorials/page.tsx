@@ -1,3 +1,5 @@
+'use client';
+
 import { tutorials } from '@/lib/mock-data';
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
@@ -138,7 +140,7 @@ export default function TutorialsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Image
-                          src={tutorial.author.avatar}
+                          src={tutorial.author.avatar || '/corporate.jpg'}
                           alt={tutorial.author.name}
                           width={24}
                           height={24}
@@ -160,14 +162,14 @@ export default function TutorialsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-24 rounded-xl border border-gray-200 bg-gray-50 p-8 text-center"
+          className="mt-24 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:p-8 text-center"
         >
           <h2 className="text-2xl font-bold mb-4">Need Help?</h2>
           <p className="text-gray-500 mb-6">
             Can't find what you're looking for? Our support team is here to
             help.
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-2 lg:gap-4">
             <Link
               href="/support"
               className="inline-flex items-center justify-center rounded-md bg-[#634AFF] px-4 py-2 text-sm font-medium text-white hover:bg-[#5239E0] transition-colors"

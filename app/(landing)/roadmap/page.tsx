@@ -1,8 +1,11 @@
+'use client';
+
 import { roadmap } from '@/lib/mock-data';
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
+import Footer from '../components/footer';
 
 export default function RoadmapPage() {
   const ref = useRef(null);
@@ -57,7 +60,7 @@ export default function RoadmapPage() {
                 {roadmap
                   .filter(
                     (item) =>
-                      item.quarter === quarter && item.year === currentYear
+                      item.quarter == quarter && item.year == currentYear
                   )
                   .map((item, index) => (
                     <motion.div
@@ -106,6 +109,7 @@ export default function RoadmapPage() {
           </button>
         </motion.div>
       </div>
+      {/* <Footer /> */}
     </div>
   );
 }

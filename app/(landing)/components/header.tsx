@@ -47,7 +47,7 @@ export default function Header() {
     <header
       className={cn(
         'sticky top-0 z-50 w-full transition-all duration-300',
-        isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm' : 'bg-transparent'
+        isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm' : 'bg-white'
       )}
     >
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
@@ -125,7 +125,12 @@ export default function Header() {
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{
+              opacity: 1,
+              height: 'fit-content',
+              position: 'absolute',
+              width: '100%',
+            }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
             className="md:hidden bg-white border-b"

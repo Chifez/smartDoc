@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './provider';
 import { Toaster } from 'sonner';
+import Header from './(landing)/components/header';
+import Footer from './(landing)/components/footer';
 // Configure the Inter font
 const inter = Inter({
   subsets: ['latin'],
@@ -24,7 +26,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <Header />
+          {children}
+          <Footer />
+        </Providers>
         <Toaster richColors />
       </body>
     </html>

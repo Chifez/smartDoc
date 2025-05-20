@@ -13,8 +13,13 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function TutorialPage({ params }: { params: { id: string } }) {
-  const tutorial = tutorials.find((t) => t.id === params.id);
+export default async function TutorialPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const id = (await params).id;
+  const tutorial = tutorials.find((t) => t.id === id);
 
   if (!tutorial) {
     notFound();
@@ -95,7 +100,7 @@ export default function TutorialPage({ params }: { params: { id: string } }) {
           <p className="text-xl text-gray-500 mb-8">{tutorial.description}</p>
           <div className="flex items-center gap-4">
             <Image
-              src={tutorial.author.avatar}
+              src={tutorial.author.avatar || '/corporate.jpg'}
               alt={tutorial.author.name}
               width={48}
               height={48}
@@ -175,7 +180,7 @@ export default function TutorialPage({ params }: { params: { id: string } }) {
         )}
 
         {/* Navigation */}
-        <div className="mt-16 flex justify-between items-center border-t pt-8">
+        <div className="mt-16 flex flex-col gap-6 lg:flex-row justify-between lg:items-center border-t pt-8">
           <Link
             href="/tutorials"
             className="inline-flex items-center gap-2 text-[#634AFF] hover:text-[#5239E0] transition-colors"
@@ -183,7 +188,7 @@ export default function TutorialPage({ params }: { params: { id: string } }) {
             <ChevronLeft className="h-4 w-4" />
             Back to Tutorials
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full lg:w-fit">
             <Link
               href="/support"
               className="inline-flex items-center justify-center rounded-md border border-[#634AFF] px-4 py-2 text-sm font-medium text-[#634AFF] hover:bg-[#634AFF]/5 transition-colors"

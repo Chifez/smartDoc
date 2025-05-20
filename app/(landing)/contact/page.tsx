@@ -6,7 +6,7 @@ import Footer from '../components/footer';
 export default function ContactPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {/* <Header /> */}
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 md:py-28 bg-gradient-to-b from-purple-50 to-white">
@@ -241,7 +241,7 @@ export default function ContactPage() {
           </div>
         </section>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

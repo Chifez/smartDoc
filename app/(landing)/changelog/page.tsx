@@ -1,9 +1,12 @@
+'use client';
+
 import { changelog } from '@/lib/mock-data';
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import Footer from '../components/footer';
 
 export default function ChangelogPage() {
   const ref = useRef(null);
@@ -56,8 +59,8 @@ export default function ChangelogPage() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="relative pl-8 pb-12 border-l-2 border-gray-200 last:border-l-0 last:pb-0"
             >
-              <div className="absolute -left-3 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-[#634AFF] text-white">
-                <span className="text-sm font-medium">{entry.version}</span>
+              <div className="absolute -left-3 top-0 flex h-6 w-6 p-2 items-center justify-center rounded-full bg-[#634AFF] text-white">
+                <span className="text-[10px] font-medium">{entry.version}</span>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
@@ -112,6 +115,7 @@ export default function ChangelogPage() {
           </div>
         </motion.div>
       </div>
+      {/* <Footer /> */}
     </div>
   );
 }

@@ -45,7 +45,7 @@ export default function BlogPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {/* <Header /> */}
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 md:py-28 bg-gradient-to-b from-purple-50 to-white">
@@ -103,7 +103,7 @@ export default function BlogPage() {
                 <div className="grid lg:grid-cols-2 gap-8 items-center">
                   <div className="relative h-[300px] lg:h-[400px] rounded-xl overflow-hidden">
                     <Image
-                      src={featuredPost.featuredImage || '/placeholder.svg'}
+                      src={featuredPost.featuredImage || '/corporate.jpg'}
                       alt={featuredPost.title}
                       fill
                       className="object-cover"
@@ -157,7 +157,7 @@ export default function BlogPage() {
                     >
                       <div className="relative h-48 w-full">
                         <Image
-                          src={post.featuredImage || '/placeholder.svg'}
+                          src={post.featuredImage || '/corporate.jpg'}
                           alt={post.title}
                           fill
                           className="object-cover"
@@ -188,7 +188,7 @@ export default function BlogPage() {
                         <div className="flex items-center justify-between mt-auto pt-4 border-t">
                           <div className="flex items-center gap-2">
                             <Image
-                              src={post.author.avatar}
+                              src={post.author.avatar || '/corporate.jpg'}
                               alt={post.author.name}
                               width={24}
                               height={24}
@@ -270,7 +270,7 @@ export default function BlogPage() {
           </div>
         </section>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

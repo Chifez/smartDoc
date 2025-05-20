@@ -146,27 +146,27 @@ export const features: Feature[] = [
             "Share documents with anyone via secure links or direct invitations.",
         category: "collaboration",
     },
-    {
-        icon: Globe,
-        title: "Cross-platform Access",
-        description:
-            "Access your documents from any device, anywhere, with our web and mobile apps.",
-        category: "productivity",
-    },
+    // {
+    //     icon: Globe,
+    //     title: "Cross-platform Access",
+    //     description:
+    //         "Access your documents from any device, anywhere, with our web and mobile apps.",
+    //     category: "productivity",
+    // },
     {
         icon: Code,
         title: "API Access",
         description:
             "Integrate Syncro with your existing tools and workflows through our robust API.",
-        category: "integration",
+        category: "security",
     },
-    {
-        icon: BookOpen,
-        title: "Templates Library",
-        description:
-            "Start quickly with professionally designed templates for various document types.",
-        category: "productivity",
-    },
+    // {
+    //     icon: BookOpen,
+    //     title: "Templates Library",
+    //     description:
+    //         "Start quickly with professionally designed templates for various document types.",
+    //     category: "productivity",
+    // },
 ];
 
 export const integrations: Integration[] = [
@@ -245,21 +245,21 @@ export const roadmap: RoadmapItem[] = [
         description: "Native mobile applications for iOS and Android",
         status: "in-progress",
         quarter: "Q2",
-        year: 2024,
+        year: 2025,
     },
     {
         title: "Advanced Analytics",
         description: "Document usage and collaboration analytics dashboard",
         status: "planned",
         quarter: "Q3",
-        year: 2024,
+        year: 2025,
     },
     {
         title: "AI Document Assistant",
         description: "AI-powered document analysis and suggestions",
         status: "planned",
         quarter: "Q4",
-        year: 2024,
+        year: 2025,
     },
 ];
 
